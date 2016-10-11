@@ -42,7 +42,7 @@ def load_iris_dataset(excluded_class=2):
 
     m = X.shape[0]
     assert m == Y.shape[0]
-    Y = Y.reshape(1,m)
+    Y = Y.reshape(m,1)
 
     Y[Y==classes[0]] = -1
     Y[Y==classes[1]] = 1
