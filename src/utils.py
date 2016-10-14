@@ -2,9 +2,15 @@
 
 # ---------------------------------------------------------------------- IMPORTS
 
+import csv
 import datetime
 import logging
 import numpy as np
+import os
+
+def make_directory(dir_path):
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
 # ---------------------------------------------------------------------- LOGGER
 
@@ -21,11 +27,6 @@ def get_logger(filename):
     logger.addHandler(handler)
 
     return logger,logger_path
-
-def make_directory(dir_path):
-    import os
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
 
 # ------------------------------------------------------------------- DATASETS
 
@@ -48,7 +49,21 @@ def load_iris_dataset(excluded_class=2):
     Y[Y==classes[1]] = 1
     return X,Y
 
-# -------------------------------------------------------------------- DATA MANAGER
+# -------------------------------------------------------------- I/0 FUNCTIONS
 
-def accuracy_rate(y_pred,y):
-    return np.sum(y==y_pred)/y.shape[1]
+def dict_to_csv(my_dict,filename):
+
+    make_directory(os.path.dirname(filename))
+
+    with open(filename, 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        
+        for key, value in my_dict.items():
+            writer.writerow([key, value])
+            print(key,value)
+
+def csv_to_dict(filename):
+
+    with open(filename, 'rb') as csv_file:
+        reader = csv.reader(csv_file)
+        mydict = dict(reader)
