@@ -64,6 +64,12 @@ def dict_to_csv(my_dict,filename):
 
 def csv_to_dict(filename):
 
-    with open(filename, 'rb') as csv_file:
+    with open(filename, 'r') as csv_file:
         reader = csv.reader(csv_file)
-        mydict = dict(reader)
+        mydict = {rows[0]:rows[1] for rows in reader}
+
+def ndarray_to_bytes(array):
+    return array.dumps()
+
+def string_to_ndarray(string):
+    return np.ma.loads(eval(string))
