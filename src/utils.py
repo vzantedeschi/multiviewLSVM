@@ -75,13 +75,14 @@ def make_directory(dir_path):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-def dict_to_csv(my_dict,filename):
+def dict_to_csv(my_dict,header,filename):
 
     make_directory(os.path.dirname(filename))
 
     with open(filename, 'w') as csv_file:
         writer = csv.writer(csv_file)
         
+        writer.writerow(header)
         for key, value in my_dict.items():
             writer.writerow([key, value])
 
@@ -89,7 +90,8 @@ def csv_to_dict(filename):
 
     with open(filename, 'r') as csv_file:
         reader = csv.reader(csv_file)
-        my_dict = {rows[0]:float(rows[1]) for rows in reader}
+        next(reader,None)
+        my_dict = {row[0]:float(row[1]) for row in reader}
 
     return my_dict
 
@@ -106,7 +108,7 @@ def save_gammas(gammas_dict):
         assert key in DATASETS
         assert isinstance(value,numbers.Real)
 
-    dict_to_csv(gammas_dict,GAMMA_PATH)
+    dict_to_csv(gammas_dict,["gammas for normalized samples"],GAMMA_PATH)
 
 def load_gammas():
     return csv_to_dict(GAMMA_PATH)
