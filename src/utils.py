@@ -89,7 +89,9 @@ def csv_to_dict(filename):
 
     with open(filename, 'r') as csv_file:
         reader = csv.reader(csv_file)
-        mydict = {rows[0]:float(rows[1]) for rows in reader}
+        my_dict = {rows[0]:float(rows[1]) for rows in reader}
+
+    return my_dict
 
 def ndarray_to_bytes(array):
     return array.dumps()
