@@ -8,9 +8,17 @@ import logging
 import numpy as np
 import os
 
-def make_directory(dir_path):
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+from scipy.spatial.distance import pdist
+from sklearn.preprocessing import normalize
+
+GAMMA_PATH = "./datasets/gammas.csv"
+DATASETS = ["iris01","iris02","iris12"]
+
+def compute_gamma(sample):
+    dists = pdist(sample)
+    assert len(dists) == len(sample)*(len(sample)-1)/2
+    mean_dist = np.average(dists)
+    return mean_dist
 
 # ---------------------------------------------------------------------- LOGGER
 
@@ -49,7 +57,23 @@ def load_iris_dataset(excluded_class=2):
     Y[Y==classes[1]] = 1
     return X,Y
 
+def load_dataset(dataset_name):
+    if dataset_name == "iris01":
+        x,y = load_iris_dataset(excluded_class=2)
+    elif dataset_name == "iris02":
+        x,y = load_iris_dataset(excluded_class=1)
+    elif dataset_name == "iris12":
+        x,y = load_iris_dataset(excluded_class=0)
+    else:
+        raise Exception("Unknown dataset: please implement a loader.")
+
+    return normalize(x),y
+
 # -------------------------------------------------------------- I/0 FUNCTIONS
+
+def make_directory(dir_path):
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
 def dict_to_csv(my_dict,filename):
 
@@ -60,16 +84,38 @@ def dict_to_csv(my_dict,filename):
         
         for key, value in my_dict.items():
             writer.writerow([key, value])
-            print(key,value)
 
 def csv_to_dict(filename):
 
     with open(filename, 'r') as csv_file:
         reader = csv.reader(csv_file)
-        mydict = {rows[0]:rows[1] for rows in reader}
+        mydict = {rows[0]:float(rows[1]) for rows in reader}
 
 def ndarray_to_bytes(array):
     return array.dumps()
 
 def string_to_ndarray(string):
     return np.ma.loads(eval(string))
+
+def save_gammas(gammas_dict):
+    import numbers
+
+    for key,value in gammas_dict.items():
+        assert key in DATASETS
+        assert isinstance(value,numbers.Real)
+
+    dict_to_csv(gammas_dict,GAMMA_PATH)
+
+def load_gammas():
+    return csv_to_dict(GAMMA_PATH)
+
+
+# ------------------------------------------------------------------ MAIN
+if __name__ == "__main__":
+    gammas = {}
+
+    for d in DATASETS:
+        sample,_ = load_dataset(d)
+        gammas[d] = compute_gamma(sample)
+
+    save_gammas(gammas)
