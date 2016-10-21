@@ -91,7 +91,7 @@ def csv_to_dict(filename):
     with open(filename, 'r') as csv_file:
         reader = csv.reader(csv_file)
         next(reader,None)
-        my_dict = {row[0]:float(row[1]) for row in reader}
+        my_dict = {row[0]:eval(row[1]) for row in reader}
 
     return my_dict
 
