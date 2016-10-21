@@ -1,7 +1,7 @@
 #/usr/bin/python
 
 # ---------------------------------------------------------------------- IMPORTS
-
+import argparse
 import csv
 import datetime
 import logging
@@ -11,8 +11,9 @@ import os
 from scipy.spatial.distance import pdist
 from sklearn.preprocessing import normalize
 
-GAMMA_PATH = "./datasets/gammas.csv"
-DATASETS = ["iris01","iris02","iris12"]
+PATH = "./datasets/"
+GAMMA_PATH = PATH+"gammas.csv"
+DATASETS = ["iris01","iris02","iris12","sonar"]
 
 def compute_gamma(sample):
     dists = pdist(sample)
@@ -64,10 +65,24 @@ def load_dataset(dataset_name):
         x,y = load_iris_dataset(excluded_class=1)
     elif dataset_name == "iris12":
         x,y = load_iris_dataset(excluded_class=0)
+    elif dataset_name == "sonar":
+        dataset = np.loadtxt(PATH+dataset_name+".txt")
+        x,y = np.split(dataset,[-1],axis=1)
     else:
         raise Exception("Unknown dataset: please implement a loader.")
 
     return normalize(x),y
+
+# ------------------------------------------------------------------- ARG PARSER
+
+def get_args(prog,dataset_name):
+
+    parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument("-d", "--dataset", dest='dataset_name', default=dataset_name,
+                        help='dataset directory')
+
+    return parser.parse_args()
 
 # -------------------------------------------------------------- I/0 FUNCTIONS
 
