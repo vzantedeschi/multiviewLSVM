@@ -13,7 +13,7 @@ from sklearn.preprocessing import normalize
 
 PATH = "./datasets/"
 GAMMA_PATH = PATH+"gammas.csv"
-DATASETS = ["iris01","iris02","iris12","sonar","ionosphere"]
+DATASETS = ["iris01","iris02","iris12","sonar","ionosphere","heart-statlog"]
 
 def compute_gamma(sample):
     dists = pdist(sample)
@@ -76,6 +76,9 @@ def load_dataset(dataset_name,get_params=True):
         elif dataset_name == "ionosphere":
             x,y = np.split(dataset,[-1],axis=1)
             param_dict = {'c':[10**i for i in range(-1,4)]}
+        elif dataset_name == "heart-statlog":
+            y,x = np.split(dataset,[1],axis=1)
+            param_dict = {'c':[10**i for i in range(2,10)]}
         else:
             raise Exception("Unknown dataset: please implement a loader.")
 
