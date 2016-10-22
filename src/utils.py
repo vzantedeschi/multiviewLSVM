@@ -13,7 +13,7 @@ from sklearn.preprocessing import normalize
 
 PATH = "./datasets/"
 GAMMA_PATH = PATH+"gammas.csv"
-DATASETS = ["iris01","iris02","iris12","sonar"]
+DATASETS = ["iris01","iris02","iris12","sonar","ionosphere"]
 
 def compute_gamma(sample):
     dists = pdist(sample)
@@ -58,7 +58,7 @@ def load_iris_dataset(excluded_class=2):
     Y[Y==classes[1]] = 1
     return X,Y
 
-def load_dataset(dataset_name):
+def load_dataset(dataset_name,get_params=True):
     param_dict = {'c':[10**i for i in range(-1,5)]}
     gammas = load_gammas()
 
@@ -68,14 +68,21 @@ def load_dataset(dataset_name):
         x,y = load_iris_dataset(excluded_class=1)
     elif dataset_name == "iris12":
         x,y = load_iris_dataset(excluded_class=0)
-    elif dataset_name == "sonar":
-        dataset = np.loadtxt(PATH+dataset_name+".txt")
-        x,y = np.split(dataset,[-1],axis=1)
-        param_dict = {'c':[10**i for i in range(1,6)]}
     else:
-        raise Exception("Unknown dataset: please implement a loader.")
+        dataset = np.loadtxt(PATH+dataset_name+".txt")
+        if dataset_name == "sonar":
+            x,y = np.split(dataset,[-1],axis=1)
+            param_dict = {'c':[10**i for i in range(1,6)]}
+        elif dataset_name == "ionosphere":
+            x,y = np.split(dataset,[-1],axis=1)
+            param_dict = {'c':[10**i for i in range(-1,4)]}
+        else:
+            raise Exception("Unknown dataset: please implement a loader.")
 
-    return normalize(x),y,gammas[dataset_name],param_dict
+    if get_params:
+        return normalize(x),y,gammas[dataset_name],param_dict
+    else:
+        return normalize(x),y
 
 # ------------------------------------------------------------------- ARG PARSER
 
@@ -138,7 +145,7 @@ if __name__ == "__main__":
     gammas = {}
 
     for d in DATASETS:
-        sample,_ = load_dataset(d)
+        sample,_, = load_dataset(d,get_params=False)
         gammas[d] = compute_gamma(sample)
 
     save_gammas(gammas)
