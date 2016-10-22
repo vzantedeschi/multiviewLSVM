@@ -59,6 +59,9 @@ def load_iris_dataset(excluded_class=2):
     return X,Y
 
 def load_dataset(dataset_name):
+    param_dict = {'c':[10**i for i in range(-1,5)]}
+    gammas = load_gammas()
+
     if dataset_name == "iris01":
         x,y = load_iris_dataset(excluded_class=2)
     elif dataset_name == "iris02":
@@ -68,10 +71,11 @@ def load_dataset(dataset_name):
     elif dataset_name == "sonar":
         dataset = np.loadtxt(PATH+dataset_name+".txt")
         x,y = np.split(dataset,[-1],axis=1)
+        param_dict = {'c':[10**i for i in range(1,6)]}
     else:
         raise Exception("Unknown dataset: please implement a loader.")
 
-    return normalize(x),y
+    return normalize(x),y,gammas[dataset_name],param_dict
 
 # ------------------------------------------------------------------- ARG PARSER
 
