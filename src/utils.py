@@ -59,7 +59,7 @@ def load_iris_dataset(excluded_class=2):
     return X,Y
 
 def load_dataset(dataset_name,get_params=True):
-    param_dict = {'c':[10**i for i in range(-1,5)]}
+    param_dict = {'c':[10**i for i in range(-5,5)]}
     gammas = load_gammas()
 
     if dataset_name == "iris01":
@@ -93,12 +93,14 @@ def load_dataset(dataset_name,get_params=True):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog,dataset_name):
+def get_args(prog,dataset_name,nb_clusters):
 
     parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("-d", "--dataset", dest='dataset_name', default=dataset_name,
-                        help='dataset directory')
+                        help='dataset name')
+    parser.add_argument("-n", "--nbclusters", type=int, dest='nb_clusters', default=nb_clusters,
+                        help='number of clusters')
 
     return parser.parse_args()
 
