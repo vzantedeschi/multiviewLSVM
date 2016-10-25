@@ -59,7 +59,7 @@ def load_iris_dataset(excluded_class=2):
     return X,Y
 
 def load_dataset(dataset_name,get_params=True):
-    param_dict = {'c':[10**i for i in range(-5,5)]}
+    param_dict = {'c':[10**i for i in range(-3,10)]}
     gammas = load_gammas()
 
     if dataset_name == "iris01":
@@ -72,17 +72,13 @@ def load_dataset(dataset_name,get_params=True):
         dataset = np.loadtxt(PATH+dataset_name+".txt")
         if dataset_name == "sonar":
             x,y = np.split(dataset,[-1],axis=1)
-            param_dict = {'c':[10**i for i in range(1,6)]}
         elif dataset_name == "ionosphere":
             x,y = np.split(dataset,[-1],axis=1)
-            param_dict = {'c':[10**i for i in range(-1,4)]}
         elif dataset_name == "heart-statlog":
             y,x = np.split(dataset,[1],axis=1)
-            param_dict = {'c':[10**i for i in range(2,10)]}
         elif dataset_name == "liver":
             x,y = np.split(dataset,[-1],axis=1)
             y[y==2] = -1
-            param_dict = {'c':[10**i for i in range(0,6)]}
         else:
             raise Exception("Unknown dataset: please implement a loader.")
 
