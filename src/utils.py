@@ -9,7 +9,7 @@ import numpy as np
 import os
 
 from scipy.spatial.distance import pdist
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import scale
 
 PATH = "./datasets/"
 GAMMA_PATH = PATH+"gammas.csv"
@@ -83,9 +83,9 @@ def load_dataset(dataset_name,get_params=True):
             raise Exception("Unknown dataset: please implement a loader.")
 
     if get_params:
-        return normalize(x),y,gammas[dataset_name],param_dict
+        return scale(x),y,gammas[dataset_name],param_dict
     else:
-        return normalize(x),y
+        return scale(x),y
 
 # ------------------------------------------------------------------- ARG PARSER
 
@@ -139,7 +139,7 @@ def save_gammas(gammas_dict):
         assert key in DATASETS
         assert isinstance(value,numbers.Real)
 
-    dict_to_csv(gammas_dict,["gammas for normalized samples"],GAMMA_PATH)
+    dict_to_csv(gammas_dict,["gammas for standardized samples"],GAMMA_PATH)
 
 def load_gammas():
     return csv_to_dict(GAMMA_PATH)
