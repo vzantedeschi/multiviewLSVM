@@ -9,7 +9,8 @@ import numpy as np
 import os
 
 from scipy.spatial.distance import pdist
-from sklearn.preprocessing import scale
+from sklearn.preprocessing import scale,normalize
+
 
 PATH = "./datasets/"
 GAMMA_PATH = PATH+"gammas.csv"
@@ -83,13 +84,13 @@ def load_dataset(dataset_name,get_params=True):
             raise Exception("Unknown dataset: please implement a loader.")
 
     if get_params:
-        return scale(x),y,gammas[dataset_name],param_dict
+        return scale(normalize(x)),y,gammas[dataset_name],param_dict
     else:
-        return scale(x),y
+        return scale(normalize(x)),y
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog,dataset_name,nb_clusters):
+def get_args(prog,dataset_name,nb_clusters,distance):
 
     parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -97,6 +98,10 @@ def get_args(prog,dataset_name,nb_clusters):
                         help='dataset name')
     parser.add_argument("-n", "--nbclusters", type=int, dest='nb_clusters', default=nb_clusters,
                         help='number of clusters')
+    parser.add_argument("-s", "--savemodel", dest='save_model', action="store_true",
+                        help='if set, the learned model is saved')
+    parser.add_argument("-m", "--distance", type=str, dest='distance', default=distance,
+                        choices=['euclidean','mst'], help='distance measure between centroids and landmarks')
 
     return parser.parse_args()
 
@@ -144,13 +149,12 @@ def save_gammas(gammas_dict):
 def load_gammas():
     return csv_to_dict(GAMMA_PATH)
 
-
 # ------------------------------------------------------------------ MAIN
 if __name__ == "__main__":
     gammas = {}
 
     for d in DATASETS:
-        sample,_, = load_dataset(d,get_params=False)
+        sample,_ = load_dataset(d,get_params=False)
         gammas[d] = compute_gamma(sample)
 
     save_gammas(gammas)
