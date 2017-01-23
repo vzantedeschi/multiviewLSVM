@@ -22,6 +22,20 @@ def compute_gamma(sample):
     mean_dist = np.average(dists)
     return mean_dist
 
+def most_frequent_list_dict(d_list):
+    result = {}
+    for d in d_list:
+        for k,v in d.items():
+            try:
+                result[k].append(v)
+            except:
+                result[k] = [v]
+
+    for k,v in result.items():
+        result[k] = max(set(v),key=v.count)
+
+    return result
+
 # ---------------------------------------------------------------------- LOGGER
 
 def get_logger(filename):
@@ -87,6 +101,21 @@ def load_dataset(dataset_name,get_params=True):
         return scale(x),y,gammas[dataset_name],param_dict
     else:
         return scale(x),y
+
+def load_train_test(dataset_name):
+    if dataset_name == "svmguide1":
+        conv = {i: (lambda s: float(s.decode().split(':')[1])) for i in range(1,5)}
+
+    train = np.loadtxt(PATH+dataset_name,converters=conv)
+    test = np.loadtxt(PATH+dataset_name+'.t',converters=conv)
+    
+    train_y,train_x = np.split(train,[1],axis=1)
+    test_y,test_x = np.split(test,[1],axis=1)
+
+    train_y[train_y==0] = -1
+    test_y[test_y==0] = -1
+
+    return scale(train_x),scale(test_x),train_y,test_y
 
 # ------------------------------------------------------------------- ARG PARSER
 
