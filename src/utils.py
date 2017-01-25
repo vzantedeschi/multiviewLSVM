@@ -54,26 +54,49 @@ def get_logger(filename):
 
 # ------------------------------------------------------------------- DATASETS
 
-def load_iris_dataset(excluded_class=2):
-    classes = [0,1,2]
-    classes.remove(excluded_class)
-
+def load_iris_dataset(excluded_class=None):
     from sklearn.datasets import load_iris
     # load dataset
     iris = load_iris()
-    # select instances of classes 0 and 1
-    Y = iris.target[iris.target!=excluded_class]
-    X = iris.data[iris.target!=excluded_class]
 
-    m = X.shape[0]
-    assert m == Y.shape[0]
-    Y = Y.reshape(m,1)
+    if excluded_class is None:
 
-    Y[Y==classes[0]] = -1
-    Y[Y==classes[1]] = 1
-    return X,Y
+        return iris.data,iris.target
 
-def load_dataset(dataset_name,get_params=True):
+    else:
+        classes = [0,1,2]
+        classes.remove(excluded_class)
+
+        # select instances of classes 0 and 1
+        Y = iris.target[iris.target!=excluded_class]
+        X = iris.data[iris.target!=excluded_class]
+
+        m = X.shape[0]
+        assert m == Y.shape[0]
+
+        Y[Y==classes[0]] = -1
+        Y[Y==classes[1]] = 1
+        return X,Y
+
+def load_mnist_dataset():
+    # from keras.datasets import mnist
+
+    import os
+
+    proxy = 'http://cache.univ-st-etienne.fr:3128'
+
+    os.environ['http_proxy'] = proxy 
+    os.environ['HTTP_PROXY'] = proxy
+    os.environ['https_proxy'] = proxy
+    os.environ['HTTPS_PROXY'] = proxy
+
+    # return mnist.load_data()
+
+    from sklearn.datasets import fetch_mldata
+    mnist = fetch_mldata('MNIST original', data_home="datasets/")
+    return mnist.data,mnist.target
+
+def load_dataset(dataset_name,get_params=False):
     param_dict = {'c':[10**i for i in range(-3,10)]}
     gammas = load_gammas()
 
@@ -83,6 +106,8 @@ def load_dataset(dataset_name,get_params=True):
         x,y = load_iris_dataset(excluded_class=1)
     elif dataset_name == "iris12":
         x,y = load_iris_dataset(excluded_class=0)
+    elif dataset_name == "mnist":
+        x,y = load_mnist_dataset()
     else:
         dataset = np.loadtxt(PATH+dataset_name+".txt")
         if dataset_name == "sonar":
@@ -105,15 +130,22 @@ def load_dataset(dataset_name,get_params=True):
 def load_train_test(dataset_name):
     if dataset_name == "svmguide1":
         conv = {i: (lambda s: float(s.decode().split(':')[1])) for i in range(1,5)}
+        train_name = dataset_name
+        test_name = dataset_name+".t"
+    # elif dataset_name == "ijcnn1":
+    #     train_name = dataset_name+".tr"
+    #     test_name = dataset_name+".t"
+    #     # conv = {lambda s: {int(s.decode().split(':')[0]):float(s.decode().split(':')[1])}}
+    #     conv = {i: (lambda s: float(s.decode().split(':')[1]) or 0) for i in range(1,14)}
 
-    train = np.loadtxt(PATH+dataset_name,converters=conv)
-    test = np.loadtxt(PATH+dataset_name+'.t',converters=conv)
-    
-    train_y,train_x = np.split(train,[1],axis=1)
-    test_y,test_x = np.split(test,[1],axis=1)
+        train = np.loadtxt(PATH+train_name,converters=conv)
+        test = np.loadtxt(PATH+test_name,converters=conv)
 
-    train_y[train_y==0] = -1
-    test_y[test_y==0] = -1
+        train_y,train_x = np.split(train,[1],axis=1)
+        test_y,test_x = np.split(test,[1],axis=1)
+
+        train_y[train_y==0] = -1
+        test_y[test_y==0] = -1
 
     return scale(train_x),scale(test_x),train_y,test_y
 
