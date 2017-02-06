@@ -132,11 +132,11 @@ def load_train_test(dataset_name):
         conv = {i: (lambda s: float(s.decode().split(':')[1])) for i in range(1,5)}
         train_name = dataset_name
         test_name = dataset_name+".t"
-    # elif dataset_name == "ijcnn1":
-    #     train_name = dataset_name+".tr"
-    #     test_name = dataset_name+".t"
-    #     # conv = {lambda s: {int(s.decode().split(':')[0]):float(s.decode().split(':')[1])}}
-    #     conv = {i: (lambda s: float(s.decode().split(':')[1]) or 0) for i in range(1,14)}
+    elif dataset_name == "ijcnn1":
+        train_name = dataset_name+".tr"
+        test_name = dataset_name+".t"
+        # conv = {lambda s: {int(s.decode().split(':')[0]):float(s.decode().split(':')[1])}}
+        conv = {i: (lambda s: float(s.decode().split(':')[1]) or 0) for i in range(1,14)}
 
         train = np.loadtxt(PATH+train_name,converters=conv)
         test = np.loadtxt(PATH+test_name,converters=conv)
