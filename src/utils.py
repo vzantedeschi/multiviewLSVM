@@ -2,6 +2,7 @@
 
 # ---------------------------------------------------------------------- IMPORTS
 import argparse
+import numpy as np
 import random
 
 from liblinearutil import *
@@ -41,7 +42,6 @@ def array_to_dict(a,**kwargs):
                 e = a[i,j]
                 if e != 0:
                     results[i][k*L+j+1] = float(e)
-            # results[i][k*L+r+1] = 1
     else:
 
         for i in range(r):
@@ -51,7 +51,7 @@ def array_to_dict(a,**kwargs):
                 e = a[i,j]
                 if e != 0:
                     results[i][j+1] = float(e)
-            # results[i][r+1] = 1
+
     return results
 
 # ----------------------------------------------------------------------
@@ -75,7 +75,7 @@ def project(x,landmarks,clusterer=None,norm=False):
     projection = x_arr.dot(landmarks)
 
     if clusterer:
-        return array_to_dict(projection,clusterer=clusterer,land=landmarks.shape[0])
+        return array_to_dict(projection,clusterer=clusterer,land=landmarks.shape[1])
     else:
         return array_to_dict(projection)
 
@@ -87,10 +87,23 @@ def clustering(x,clusterer):
         return clusterer.labels_
 
 # ----------------------------------------------------------------- DATASET LOADERS
+DATAPATH = "./datasets/"
+
 def load_dataset(name):
     if name == "svmguide1":
-        train_y, train_x = svm_read_problem('./datasets/svmguide1')
-        test_y, test_x = svm_read_problem('./datasets/svmguide1.t')
+        train_y, train_x = svm_read_problem(DATAPATH+name)
+        test_y, test_x = svm_read_problem(DATAPATH+name+'.t')
+
+    elif name == "ijcnn1":
+        train_y, train_x = svm_read_problem(DATAPATH+name+'.tr')
+        test_y, test_x = svm_read_problem(DATAPATH+name+'.t')
+
+    elif name == "mnist":
+        train = np.loadtxt(DATAPATH+name+"_train.csv",delimiter=",")
+        test = np.loadtxt(DATAPATH+name+"_test.csv",delimiter=",")
+        train_y,train_x = np.split(train,[1],axis=1)
+        test_y,test_x = np.split(train,[1],axis=1)
+
     return train_y,train_x,test_y,test_x
 
 # ------------------------------------------------------------------- ARG PARSER
