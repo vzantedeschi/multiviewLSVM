@@ -117,11 +117,9 @@ def load_dataset(name,norm=False):
         train_path = DATAPATH+name+'.tr'
         test_path = DATAPATH+name+'.t'
 
-    # elif name == "mnist":
-    #     train = np.loadtxt(DATAPATH+name+"_train.csv",delimiter=",")
-    #     test = np.loadtxt(DATAPATH+name+"_test.csv",delimiter=",")
-    #     train_y,train_x = np.split(train,[1],axis=1)
-    #     test_y,test_x = np.split(train,[1],axis=1)
+    elif name == "mnist":
+        train_path = DATAPATH+name+'_train.csv.sparse'
+        test_path = DATAPATH+name+'_test.csv.sparse'
 
     train_y,train_x = load_csr_matrix(train_path)
     
