@@ -55,24 +55,16 @@ def array_to_dict(a,**kwargs):
     return results
 
 # ----------------------------------------------------------------------
-def select_landmarks(x,n,norm=False):
-    m = len(x)
-    landmarks = dict_to_array(random.sample(x,min(m,n)))
-
-    if norm:
-        normalize(landmarks)
+def select_landmarks(x,n):
+    m = x.shape[0]
+    landmarks = x[random.sample(range(m),min(m,n))]
 
     return landmarks.transpose()
 
-def project(x,landmarks,clusterer=None,norm=False):
-    
-    x_arr = dict_to_array(x)
-
-    if norm:
-        normalize(x_arr)
+def project(x,landmarks,clusterer=None):
 
     # project on landmark space
-    projection = x_arr.dot(landmarks)
+    projection = x.dot(landmarks)
 
     if clusterer:
         return array_to_dict(projection,clusterer=clusterer,land=landmarks.shape[1])
@@ -89,22 +81,56 @@ def clustering(x,clusterer):
 # ----------------------------------------------------------------- DATASET LOADERS
 DATAPATH = "./datasets/"
 
-def load_dataset(name):
+def load_csr_matrix(filename):
+    with open(filename,'r') as in_file:
+        data,indices,indptr = [],[],[0]
+
+        labels = []
+        ptr = 0
+
+        for line in in_file:
+            line = line.split(None, 1)
+            if len(line) == 1: 
+                line += ['']
+            label, features = line
+            labels.append(float(label))
+
+            f_list = features.split()
+            for f in f_list:
+
+                k,v = f.split(':')
+                data.append(float(v))
+                indices.append(float(k)-1)
+
+            ptr += len(f_list)
+            indptr.append(ptr)
+
+        return labels,csr_matrix((data, indices, indptr))
+
+def load_dataset(name,norm=False):
+
     if name == "svmguide1":
-        train_y, train_x = svm_read_problem(DATAPATH+name)
-        test_y, test_x = svm_read_problem(DATAPATH+name+'.t')
+        train_path = DATAPATH+name
+        test_path = DATAPATH+name+'.t'
 
     elif name == "ijcnn1":
-        train_y, train_x = svm_read_problem(DATAPATH+name+'.tr')
-        test_y, test_x = svm_read_problem(DATAPATH+name+'.t')
+        train_path = DATAPATH+name+'.tr'
+        test_path = DATAPATH+name+'.t'
 
-    elif name == "mnist":
-        train = np.loadtxt(DATAPATH+name+"_train.csv",delimiter=",")
-        test = np.loadtxt(DATAPATH+name+"_test.csv",delimiter=",")
-        train_y,train_x = np.split(train,[1],axis=1)
-        test_y,test_x = np.split(train,[1],axis=1)
+    # elif name == "mnist":
+    #     train = np.loadtxt(DATAPATH+name+"_train.csv",delimiter=",")
+    #     test = np.loadtxt(DATAPATH+name+"_test.csv",delimiter=",")
+    #     train_y,train_x = np.split(train,[1],axis=1)
+    #     test_y,test_x = np.split(train,[1],axis=1)
 
-    return train_y,train_x,test_y,test_x
+    train_y,train_x = load_csr_matrix(train_path)
+    
+    test_y,test_x = load_csr_matrix(test_path)
+
+    if norm:
+        return normalize(train_y),normalize(train_x),test_y,test_x
+    else:
+        return train_y,train_x,test_y,test_x
 
 # ------------------------------------------------------------------- ARG PARSER
 
