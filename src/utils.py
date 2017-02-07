@@ -126,7 +126,7 @@ def load_dataset(name,norm=False):
     test_y,test_x = load_csr_matrix(test_path)
 
     if norm:
-        return normalize(train_y),normalize(train_x),test_y,test_x
+        return train_y,normalize(train_x),test_y,normalize(test_x)
     else:
         return train_y,train_x,test_y,test_x
 
