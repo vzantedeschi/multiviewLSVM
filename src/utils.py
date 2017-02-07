@@ -132,7 +132,7 @@ def load_dataset(name,norm=False):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog,dataset_name="svmguide1",nb_clusters=1):
+def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10):
 
     parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -140,6 +140,8 @@ def get_args(prog,dataset_name="svmguide1",nb_clusters=1):
                         help='dataset name')
     parser.add_argument("-n", "--nbclusters", type=int, dest='nb_clusters', default=nb_clusters,
                         help='number of clusters')
+    parser.add_argument("-l", "--nblands", type=int, dest='nb_landmarks', default=nb_landmarks,
+                        help='number of landmarks')
     parser.add_argument("-s", "--savemodel", dest='save_model', action="store_true",
                         help='if set, the learned model is saved')
 
