@@ -2,12 +2,31 @@
 
 # ---------------------------------------------------------------------- IMPORTS
 import argparse
+import csv
 import numpy as np
 import random
+import os
 
 from liblinearutil import *
 from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize
+
+# -------------------------------------------------------------- I/0 FUNCTIONS
+
+def make_directory(dir_path):
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+def dict_to_csv(my_dict,header,filename):
+
+    make_directory(os.path.dirname(filename))
+
+    with open(filename, 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        
+        writer.writerow(header)
+        for key, value in my_dict.items():
+            writer.writerow([key, value])
 
 def dict_to_array(l):
     data,indices,indptr = [],[],[0]
@@ -59,10 +78,18 @@ def select_landmarks(x,n):
     m = x.shape[0]
     landmarks = x[random.sample(range(m),min(m,n))]
 
-    return landmarks.transpose()
+    return landmarks
 
-def project(x,landmarks,clusterer=None):
+def get_unit_vectors(landmarks,clusterer):
+    land_clusters = clusterer.predict(landmarks)
+    centroids = clusterer.cluster_centers_
+    land_centroids = centroids[land_clusters]
+    return normalize(landmarks-land_centroids).transpose()
 
+def project(x,landmarks,clusterer=None,unit_vectors=None):
+
+    if unit_vectors is not None:
+        projection = x.dot(unit_vectors-landmarks)
     # project on landmark space
     projection = x.dot(landmarks)
 
