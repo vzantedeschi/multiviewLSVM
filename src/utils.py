@@ -9,7 +9,7 @@ import os
 
 from liblinearutil import *
 from scipy.sparse import csr_matrix
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize,scale
 
 # -------------------------------------------------------------- I/0 FUNCTIONS
 
@@ -50,26 +50,23 @@ def array_to_dict(a,**kwargs):
     results = []
     r,c = a.shape
 
+    a = a.tolil()
+
     if kwargs:
-        clusters = clustering(a,kwargs['clusterer'])
+        clusters = kwargs['clusters']
         L = kwargs['land']
 
         for i in range(r):
             k = clusters[i]
             results.append({})
             for j in range(c):
-                e = a[i,j]
-                if e != 0:
-                    results[i][k*L+j+1] = float(e)
+                results[i][k*L+j+1] = float(a[i,j])
     else:
 
         for i in range(r):
-
             results.append({})
             for j in range(c):
-                e = a[i,j]
-                if e != 0:
-                    results[i][j+1] = float(e)
+                results[i][j+1] = float(a[i,j])
 
     return results
 
@@ -80,23 +77,14 @@ def select_landmarks(x,n):
 
     return landmarks
 
-def get_unit_vectors(landmarks,clusterer):
-    land_clusters = clusterer.predict(landmarks)
-    centroids = clusterer.cluster_centers_
-    land_centroids = centroids[land_clusters]
-    return normalize(landmarks-land_centroids).transpose()
-
-def project(x,landmarks,clusterer=None,unit_vectors=None):
-
-    if unit_vectors is not None:
-        projection = x.dot(unit_vectors-landmarks)
-    # project on landmark space
-    projection = x.dot(landmarks)
-
-    if clusterer:
-        return array_to_dict(projection,clusterer=clusterer,land=landmarks.shape[1])
+def get_unit_vectors(landmarks,clusterer=None):
+    if clusterer is not None:
+        land_clusters = clusterer.predict(landmarks)
+        centroids = clusterer.cluster_centers_
+        land_centroids = centroids[land_clusters]
     else:
-        return array_to_dict(projection)
+        land_centroids = np.zeros(landmarks.shape)
+    return csr_matrix(normalize(landmarks-land_centroids).transpose())
 
 def clustering(x,clusterer):
     try:
@@ -155,7 +143,7 @@ def load_dataset(name,norm=False):
     if norm:
         return train_y,normalize(train_x),test_y,normalize(test_x)
     else:
-        return train_y,train_x,test_y,test_x
+        return train_y,scale(train_x,with_mean=False),test_y,scale(test_x,with_mean=False)
 
 # ------------------------------------------------------------------- ARG PARSER
 
@@ -169,7 +157,9 @@ def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10):
                         help='number of clusters')
     parser.add_argument("-l", "--nblands", type=int, dest='nb_landmarks', default=nb_landmarks,
                         help='number of landmarks')
-    parser.add_argument("-s", "--savemodel", dest='save_model', action="store_true",
-                        help='if set, the learned model is saved')
+    parser.add_argument("-o", "--normalize", dest='norm', action="store_true",
+                        help='if set, the dataset is normalized')
+    parser.add_argument("-c", "--centeredk", dest='centered', action="store_true",
+                        help='if set, the centered linear kernel is used instead of the std linear')
 
     return parser.parse_args()
