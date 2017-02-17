@@ -54,19 +54,21 @@ def array_to_dict(a,**kwargs):
 
     if kwargs:
         clusters = kwargs['clusters']
-        L = kwargs['land']
+        L = kwargs['land']+1
 
         for i in range(r):
             k = clusters[i]
             results.append({})
             for j in range(c):
                 results[i][k*L+j+1] = float(a[i,j])
+            results[i][k*L+c+1] = 1
     else:
 
         for i in range(r):
             results.append({})
             for j in range(c):
                 results[i][j+1] = float(a[i,j])
+            results[i][c+1] = 1
 
     return results
 
