@@ -50,25 +50,28 @@ def array_to_dict(a,**kwargs):
     results = []
     r,c = a.shape
 
-    a = a.tolil()
+    try:
+        a = a.tolil()
+    except:
+        pass
 
     if kwargs:
         clusters = kwargs['clusters']
-        L = kwargs['land']+1
+        L = kwargs['land']
 
         for i in range(r):
             k = clusters[i]
             results.append({})
             for j in range(c):
                 results[i][k*L+j+1] = float(a[i,j])
-            results[i][k*L+c+1] = 1
+            # results[i][k*L+c+1] = 1
     else:
 
         for i in range(r):
             results.append({})
             for j in range(c):
                 results[i][j+1] = float(a[i,j])
-            results[i][c+1] = 1
+            # results[i][c+1] = 1
 
     return results
 
@@ -149,7 +152,7 @@ def load_dataset(name,norm=False):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10):
+def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,linear=True,pca=False):
 
     parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -163,5 +166,9 @@ def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10):
                         help='if set, the dataset is normalized')
     parser.add_argument("-c", "--centeredk", dest='centered', action="store_true",
                         help='if set, the centered linear kernel is used instead of the std linear')
+    parser.add_argument("-r", "--rbfk", dest='linear', action="store_false",
+                        help='if set, the rbf kernel is used')
+    parser.add_argument("-p", "--pca", dest='pca', action="store_true",
+                        help='if set, the landmarks are selected as the principal components')
 
     return parser.parse_args()
