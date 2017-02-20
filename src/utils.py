@@ -129,21 +129,29 @@ def load_csr_matrix(filename):
 
 def load_dataset(name,norm=False):
 
-    if name == "svmguide1":
-        train_path = DATAPATH+name
-        test_path = DATAPATH+name+'.t'
+    if name == "letter":
+        m = 16000
+        y,x = load_csr_matrix(DATAPATH+"letter-recognition.data.sparse")
+        train_y,test_y = y[:m],y[m:]
+        train_x,test_x = x[:m],x[m:]
 
-    elif name == "ijcnn1":
-        train_path = DATAPATH+name+'.tr'
-        test_path = DATAPATH+name+'.t'
+    else:
+        if name == "svmguide1":
+            train_path = DATAPATH+name
+            test_path = DATAPATH+name+'.t'
 
-    elif name == "mnist":
-        train_path = DATAPATH+name+'_train.csv.sparse'
-        test_path = DATAPATH+name+'_test.csv.sparse'
+        elif name == "ijcnn1":
+            train_path = DATAPATH+name+'.tr'
+            test_path = DATAPATH+name+'.t'
 
-    train_y,train_x = load_csr_matrix(train_path)
-    
-    test_y,test_x = load_csr_matrix(test_path)
+        elif name == "mnist":
+            train_path = DATAPATH+name+'_train.csv.sparse'
+            test_path = DATAPATH+name+'_test.csv.sparse'
+
+
+        train_y,train_x = load_csr_matrix(train_path)
+        
+        test_y,test_x = load_csr_matrix(test_path)
 
     if norm:
         return train_y,normalize(train_x),test_y,normalize(test_x)
