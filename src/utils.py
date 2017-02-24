@@ -176,7 +176,15 @@ def load_dense_dataset(dataset_name,norm=False):
         return csr_matrix(normalize(x)),y
     else:
         return csr_matrix(scale(x)),y
-    
+
+def csv_to_dict(filename):
+
+    with open(filename, 'r') as csv_file:
+        reader = csv.reader(csv_file)
+        next(reader,None)
+        my_dict = {row[0]:eval(row[1]) for row in reader}
+
+    return my_dict
 
 # ------------------------------------------------------------------- ARG PARSER
 
