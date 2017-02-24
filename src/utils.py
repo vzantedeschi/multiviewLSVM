@@ -158,6 +158,26 @@ def load_dataset(name,norm=False):
     else:
         return train_y,scale(train_x,with_mean=False),test_y,scale(test_x,with_mean=False)
 
+def load_dense_dataset(dataset_name,norm=False):
+    dataset = np.loadtxt(DATAPATH+dataset_name+".txt")
+    if dataset_name == "sonar":
+        x,y = np.split(dataset,[-1],axis=1)
+    elif dataset_name == "ionosphere":
+        x,y = np.split(dataset,[-1],axis=1)
+    elif dataset_name == "heart-statlog":
+        y,x = np.split(dataset,[1],axis=1)
+    elif dataset_name == "liver":
+        x,y = np.split(dataset,[-1],axis=1)
+        y[y==2] = -1
+    else:
+        raise Exception("Unknown dataset: please implement a loader.")
+
+    if norm:
+        return csr_matrix(normalize(x)),y
+    else:
+        return csr_matrix(scale(x)),y
+    
+
 # ------------------------------------------------------------------- ARG PARSER
 
 def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,linear=True,pca=False):
