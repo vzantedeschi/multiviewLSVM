@@ -11,6 +11,15 @@ from liblinearutil import *
 from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize,scale
 
+# ----------------------------------------------------------- SUPPORTED KERNELS
+
+kernels = {
+    "linear": None,
+    "rbf": None,
+    "relu": None,
+    "linear_rbf": None
+}
+
 # -------------------------------------------------------------- I/0 FUNCTIONS
 
 def make_directory(dir_path):
@@ -188,7 +197,7 @@ def csv_to_dict(filename):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,linear=True,pca=False):
+def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,kernel="linear",pca=False):
 
     parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -202,8 +211,8 @@ def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,linear=
                         help='if set, the dataset is normalized')
     parser.add_argument("-c", "--centeredk", dest='centered', action="store_true",
                         help='if set, the centered linear kernel is used instead of the std linear')
-    parser.add_argument("-r", "--rbfk", dest='linear', action="store_false",
-                        help='if set, the rbf kernel is used')
+    parser.add_argument("-k", "--kernel", dest='kernel', default=kernel, choices=kernels.keys(),
+                        help='choice of projection function')
     parser.add_argument("-p", "--pca", dest='pca', action="store_true",
                         help='if set, the landmarks are selected as the principal components')
 
