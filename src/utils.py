@@ -160,6 +160,24 @@ def load_dataset(name,norm=False):
     else:
         return train_y,scale(train_x,with_mean=False),test_y,scale(test_x,with_mean=False)
 
+def load_pascal(cl,norm=False):
+    train_x = np.load(DATAPATH+"pascal_train.npy")
+    test_x = np.load(DATAPATH+"pascal_test.npy")
+    val_x = np.load(DATAPATH+"pascal_val.npy")
+
+    train_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_train_y")
+    test_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_test_y")
+    val_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_val_y")
+
+    # assert len(train_x) == len(train_y)
+    # assert len(val_x) == len(val_y)
+    # assert len(test_x) == len(test_y)
+
+    if norm:
+        return train_y,normalize(train_x),test_y,normalize(test_x),val_y,normalize(val_x)
+    else:
+        return train_y,scale(train_x,with_mean=False),test_y,scale(test_x,with_mean=False),val_y,scale(val_x,with_mean=False)
+
 def load_dense_dataset(dataset_name,norm=False):
     dataset = np.loadtxt(DATAPATH+dataset_name+".txt")
     if dataset_name == "sonar":
