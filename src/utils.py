@@ -169,9 +169,9 @@ def load_pascal(cl,norm=False):
     test_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_test_y")
     val_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_val_y")
 
-    # assert len(train_x) == len(train_y)
-    # assert len(val_x) == len(val_y)
-    # assert len(test_x) == len(test_y)
+    assert len(train_x) == len(train_y)
+    assert len(val_x) == len(val_y), str(len(val_x))+" "+str(len(val_y))
+    assert len(test_x) == len(test_y)
 
     if norm:
         return train_y,normalize(train_x),test_y,normalize(test_x),val_y,normalize(val_x)
