@@ -78,124 +78,41 @@ def array_to_dict(a,**kwargs):
     return results
 
 # ----------------------------------------------------------------------
-def select_landmarks(x,n):
-    m = x.shape[0]
-    landmarks = x[random.sample(range(m),min(m,n))]
+def select_landmarks(x, n):
+    m = len(x)
 
-    return landmarks
-
-def get_unit_vectors(landmarks,clusterer=None):
-    if clusterer is not None:
-        land_clusters = clusterer.predict(landmarks)
-        centroids = clusterer.cluster_centers_
-        land_centroids = centroids[land_clusters]
-    else:
-        land_centroids = np.zeros(landmarks.shape)
-    return csr_matrix(normalize(landmarks-land_centroids).transpose())
-
-def clustering(x,clusterer):
-    try:
-        return clusterer.predict(x)
-    except:
-        clusterer.fit(x)
-        return clusterer.labels_
+    return random.sample(x, min(m, n))
 
 # ----------------------------------------------------------------- DATASET LOADERS
 DATAPATH = "./datasets/"
 
-def load_csr_matrix(filename):
-    with open(filename,'r') as in_file:
-        data,indices,indptr = [],[],[0]
+def load_flower17():
 
-        labels = []
-        ptr = 0
+    from scipy.io import loadmat
 
-        for line in in_file:
-            line = line.split(None, 1)
-            if len(line) == 1: 
-                line += ['']
-            label, features = line
-            labels.append(float(label))
+    dist_mat1 = loadmat(os.path.join(DATAPATH, "flower17", "distancematrices17gcfeat06"))
+    dist_mat2 = loadmat(os.path.join(DATAPATH, "flower17", "distancematrices17itfeat08"))
 
-            f_list = features.split()
-            for f in f_list:
+    dist_matrices = dict(dist_mat1, **dist_mat2)
 
-                k,v = f.split(':')
-                data.append(float(v))
-                indices.append(float(k)-1)
+    matrix = []
+    for k, val in dist_matrices.items():
+        if not k.startswith("__"):
+            matrix.append(val)
+    matrix = np.vstack(matrix)
+    assert matrix.shape == (1360 * 7, 1360), matrix.shape
 
-            ptr += len(f_list)
-            indptr.append(ptr)
+    splits = loadmat(os.path.join(DATAPATH, "flower17", "datasplits"))
 
-        return labels,csr_matrix((data, indices, indptr))
+    sets = []
+    for i in range(1, 4):
+        s = (splits["trn{}".format(i)]-1, splits["tst{}".format(i)]-1, splits["val{}".format(i)]-1)
+        sets.append(list(map(np.squeeze, s)))
 
-def load_dataset(name,norm=False):
+    indices = list(range(1360))
+    labels = np.asarray([i // 80 for i in indices])
 
-    if name == "letter":
-        m = 16000
-        y,x = load_csr_matrix(DATAPATH+"letter-recognition.data.sparse")
-        train_y,test_y = y[:m],y[m:]
-        train_x,test_x = x[:m],x[m:]
-
-    else:
-        if name == "svmguide1":
-            train_path = DATAPATH+name
-            test_path = DATAPATH+name+'.t'
-
-        elif name == "ijcnn1":
-            train_path = DATAPATH+name+'.tr'
-            test_path = DATAPATH+name+'.t'
-
-        elif name == "mnist":
-            train_path = DATAPATH+name+'_train.csv.sparse'
-            test_path = DATAPATH+name+'_test.csv.sparse'
-
-
-        train_y,train_x = load_csr_matrix(train_path)
-        
-        test_y,test_x = load_csr_matrix(test_path)
-
-    if norm:
-        return train_y,normalize(train_x),test_y,normalize(test_x)
-    else:
-        return train_y,scale(train_x,with_mean=False),test_y,scale(test_x,with_mean=False)
-
-def load_pascal(cl,norm=False):
-    train_x = np.load(DATAPATH+"pascal_train.npy")
-    test_x = np.load(DATAPATH+"pascal_test.npy")
-    val_x = np.load(DATAPATH+"pascal_val.npy")
-
-    train_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_train_y")
-    test_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_test_y")
-    val_y = np.loadtxt(DATAPATH+"pascal_y/"+cl+"_val_y")
-
-    assert len(train_x) == len(train_y)
-    assert len(val_x) == len(val_y), str(len(val_x))+" "+str(len(val_y))
-    assert len(test_x) == len(test_y)
-
-    if norm:
-        return train_y,normalize(train_x),test_y,normalize(test_x),val_y,normalize(val_x)
-    else:
-        return train_y,scale(train_x,with_mean=False),test_y,scale(test_x,with_mean=False),val_y,scale(val_x,with_mean=False)
-
-def load_dense_dataset(dataset_name,norm=False):
-    dataset = np.loadtxt(DATAPATH+dataset_name+".txt")
-    if dataset_name == "sonar":
-        x,y = np.split(dataset,[-1],axis=1)
-    elif dataset_name == "ionosphere":
-        x,y = np.split(dataset,[-1],axis=1)
-    elif dataset_name == "heart-statlog":
-        y,x = np.split(dataset,[1],axis=1)
-    elif dataset_name == "liver":
-        x,y = np.split(dataset,[-1],axis=1)
-        y[y==2] = -1
-    else:
-        raise Exception("Unknown dataset: please implement a loader.")
-
-    if norm:
-        return csr_matrix(normalize(x)),y
-    else:
-        return csr_matrix(scale(x)),y
+    return indices, labels, sets, matrix
 
 def csv_to_dict(filename):
 
@@ -214,15 +131,11 @@ def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,kernel=
 
     parser.add_argument("-d", "--dataset", dest='dataset_name', default=dataset_name,
                         help='dataset name')
-    parser.add_argument("-n", "--nbclusters", type=int, dest='nb_clusters', default=nb_clusters,
-                        help='number of clusters')
     parser.add_argument("-l", "--nblands", type=int, dest='nb_landmarks', default=nb_landmarks,
                         help='number of landmarks')
     parser.add_argument("-o", "--normalize", dest='norm', action="store_true",
                         help='if set, the dataset is normalized')
     parser.add_argument("-k", "--kernel", dest='kernel', default=kernel, choices=kernels.keys(),
                         help='choice of projection function')
-    parser.add_argument("-p", "--pca", dest='pca', action="store_true",
-                        help='if set, the landmarks are selected as the principal components')
 
     return parser.parse_args()
