@@ -81,12 +81,15 @@ def array_to_dict(a,**kwargs):
 def select_landmarks(x, n):
     m = len(x)
 
-    return random.sample(x, min(m, n))
+    return x[random.sample(range(m), min(m, n))]
+
+def select_from_multiple_views(x, inds, lands, nb_views, nb_insts):
+    return np.hstack([x[inds + v*nb_insts][:, lands] for v in range(nb_views)])
 
 # ----------------------------------------------------------------- DATASET LOADERS
 DATAPATH = "./datasets/"
 
-def load_flower17():
+def load_flower17(process=None):
 
     from scipy.io import loadmat
 
@@ -98,6 +101,10 @@ def load_flower17():
     matrix = []
     for k, val in dist_matrices.items():
         if not k.startswith("__"):
+
+            if process:
+                val = process(val)
+
             matrix.append(val)
     matrix = np.vstack(matrix)
     assert matrix.shape == (1360 * 7, 1360), matrix.shape
