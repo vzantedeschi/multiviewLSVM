@@ -11,7 +11,7 @@ from liblinearutil import *
 from scipy.sparse import csr_matrix
 from sklearn.preprocessing import normalize,scale
 
-from src.kernels import kernels
+# from src.kernels import kernels
 
 # -------------------------------------------------------------- I/0 FUNCTIONS
 
