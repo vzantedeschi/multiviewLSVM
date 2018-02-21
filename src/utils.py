@@ -87,11 +87,11 @@ def select_from_multiple_views(x, inds, lands, nb_views, nb_insts):
     return np.hstack([x[inds + v*nb_insts][:, lands] for v in range(nb_views)])
 
 # ----------------------------------------------------------------- DATASET LOADERS
+from scipy.io import loadmat
+
 DATAPATH = "./datasets/"
 
 def load_flower17(process=None):
-
-    from scipy.io import loadmat
 
     dist_mat1 = loadmat(os.path.join(DATAPATH, "flower17", "distancematrices17gcfeat06"))
     dist_mat2 = loadmat(os.path.join(DATAPATH, "flower17", "distancematrices17itfeat08"))
@@ -120,6 +120,23 @@ def load_flower17(process=None):
     labels = np.asarray([i // 80 for i in indices])
 
     return indices, labels, sets, matrix
+
+def load_sarcos():
+
+    train_mat = loadmat(os.path.join(DATAPATH, "sarcos", "sarcos_inv"))
+    test_mat = loadmat(os.path.join(DATAPATH, "sarcos", "sarcos_inv_test"))
+
+    train_array, test_array = train_mat['sarcos_inv'], test_mat['sarcos_inv_test']
+
+    assert train_array.shape == (44484, 28), train_array.shape
+    assert test_array.shape == (4449, 28), test_array.shape
+
+    train_x, train_y = train_array[:, :21], train_array[:, 21:]
+    test_x, test_y = test_array[:, :21], test_array[:, 21:]
+
+    print(train_x.shape, train_y.shape)
+
+    return train_x, train_y, test_x, test_y
 
 def csv_to_dict(filename):
 
