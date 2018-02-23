@@ -9,7 +9,7 @@ import os
 
 from liblinearutil import *
 from scipy.sparse import csr_matrix
-from sklearn.preprocessing import normalize,scale
+from sklearn.preprocessing import normalize, scale,StandardScaler
 
 # from src.kernels import kernels
 
@@ -121,7 +121,7 @@ def load_flower17(process=None):
 
     return indices, labels, sets, matrix
 
-def load_sarcos():
+def load_sarcos(id_task=1):
 
     train_mat = loadmat(os.path.join(DATAPATH, "sarcos", "sarcos_inv"))
     test_mat = loadmat(os.path.join(DATAPATH, "sarcos", "sarcos_inv_test"))
@@ -131,12 +131,18 @@ def load_sarcos():
     assert train_array.shape == (44484, 28), train_array.shape
     assert test_array.shape == (4449, 28), test_array.shape
 
-    train_x, train_y = train_array[:, :21], train_array[:, 21:]
-    test_x, test_y = test_array[:, :21], test_array[:, 21:]
+    train_x, train_y = train_array[:, :21], train_array[:, 20+id_task]
+    test_x, test_y = test_array[:, :21], test_array[:, 20+id_task]
 
-    print(train_x.shape, train_y.shape)
+    # standar scaling appied to sarcos
+    ss = StandardScaler()
+    train_x = ss.fit_transform(train_x)
+    test_x = ss.transform(test_x)
 
-    return train_x, train_y, test_x, test_y
+    train_y = ss.fit_transform(train_y[:, None])
+    test_y = ss.transform(test_y[:, None])
+
+    return train_x, np.squeeze(train_y), test_x, np.squeeze(test_y)
 
 def csv_to_dict(filename):
 
