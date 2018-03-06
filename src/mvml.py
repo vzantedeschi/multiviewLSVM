@@ -36,7 +36,6 @@ Usage (see also demo.py for a more detailed example):
 Code is tested with Python 3.5.2 and numpy 1.12.1
 """
 
-
 class MVML:
 
     def __init__(self, kernels, labels, regression_params, nystrom_param):
@@ -344,3 +343,33 @@ class MVML:
                                                                                              v * m:(v + 1) * m]
 
         return A_new
+
+
+
+# ------------------------------------------------------------------------------- MY PATCH
+
+def one_vs_all_mvml_train(train_x, train_y, nb_classes, l, e, a):
+    models = {}
+
+    for c in range(nb_classes):
+
+        y = train_y.copy()
+        y[y == c] = 1
+        y[y != c] = -1
+
+        clf = MVML(train_x, y, [l, e], nystrom_param=a)
+        A, g, w = clf.learn_mvml()
+
+        models[c] = {"clf": clf, "a":A, "g":g, "w":w}
+
+    return models
+
+def one_vs_all_mvml_predict(test_x, models):
+
+    predictions = []
+
+    for k, values in models.items():
+
+        predictions.append(values["clf"].predict_mvml(test_x, values["g"], values["w"]))
+
+    return np.argmax(np.hstack(predictions), axis=1)

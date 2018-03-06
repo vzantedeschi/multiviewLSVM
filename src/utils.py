@@ -86,6 +86,14 @@ def select_landmarks(x, n):
 def select_from_multiple_views(x, inds, lands, nb_views, nb_insts):
     return np.hstack([x[inds + v*nb_insts][:, lands] for v in range(nb_views)])
 
+def get_view_blocks(x, inds, nb_views, nb_insts):
+    d = {}
+
+    for v in range(nb_views):
+        d[v] = x[inds + v*nb_insts]
+        
+    return d
+
 # ----------------------------------------------------------------- DATASET LOADERS
 from scipy.io import loadmat
 
