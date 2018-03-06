@@ -354,8 +354,8 @@ def one_vs_all_mvml_train(train_x, train_y, nb_classes, l, e, a):
     for c in range(nb_classes):
 
         y = train_y.copy()
-        y[y == c] = 1
-        y[y != c] = -1
+        y[train_y == c] = 1
+        y[train_y != c] = -1
 
         clf = MVML(train_x, y, [l, e], nystrom_param=a)
         A, g, w = clf.learn_mvml()
@@ -369,7 +369,6 @@ def one_vs_all_mvml_predict(test_x, models):
     predictions = []
 
     for k, values in models.items():
-
         predictions.append(values["clf"].predict_mvml(test_x, values["g"], values["w"]))
 
     return np.argmax(np.hstack(predictions), axis=1)
