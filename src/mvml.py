@@ -372,3 +372,15 @@ def one_vs_all_mvml_predict(test_x, models):
         predictions.append(values["clf"].predict_mvml(test_x, values["g"], values["w"]))
 
     return np.argmax(np.hstack(predictions), axis=1)
+
+def multiview_kernels(x, kernel, nb_views, gamma=None):
+
+    matrices = {}
+    feats_per_view = x.shape[1] // nb_views
+
+    for v in range(nb_views):
+        view_m = kernel(x[:, v*feats_per_view: (1+v)*feats_per_view], gamma=gamma)
+
+        matrices[v] = view_m
+
+    return matrices
