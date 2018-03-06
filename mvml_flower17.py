@@ -62,10 +62,9 @@ for a in appr_levels:
 
                     mvml = one_vs_all_mvml_train(train_x, train_y, 17, l, e, a)
                     pred = one_vs_all_mvml_predict(val_x, mvml)
-                    print(val_y, pred)
                     p_acc = accuracy_score(val_y, pred)
 
-                    tunin_acc[(l,e)] = p_acc
+                    tunin_acc[(l,e)] += p_acc
 
             best_l, best_e = max(tunin_acc, key=tunin_acc.get)
             t2 = time.time()
