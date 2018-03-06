@@ -7,11 +7,16 @@ import numpy as np
 import random
 import os
 
+from numpy import linalg as LA
 from liblinearutil import *
 from scipy.sparse import csr_matrix
-from sklearn.preprocessing import normalize, scale,StandardScaler
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import normalize, scale
 
-# from src.kernels import kernels
+
+def normalized_mse(y, y_pred):
+
+    return mean_squared_error(y, y_pred) / LA.norm(y)
 
 # -------------------------------------------------------------- I/0 FUNCTIONS
 
@@ -141,14 +146,6 @@ def load_sarcos(id_task=1):
 
     train_x, train_y = train_array[:, :21], train_array[:, 20+id_task]
     test_x, test_y = test_array[:, :21], test_array[:, 20+id_task]
-
-    # standar scaling appied to sarcos
-    ss = StandardScaler()
-    train_x = ss.fit_transform(train_x)
-    test_x = ss.transform(test_x)
-
-    train_y = ss.fit_transform(train_y[:, None])
-    test_y = ss.transform(test_y[:, None])
 
     return train_x, np.squeeze(train_y), test_x, np.squeeze(test_y)
 
