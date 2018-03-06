@@ -10,12 +10,13 @@ from src.mvml import MVML, one_vs_all_mvml_train, one_vs_all_mvml_predict
 from src.utils import dict_to_csv, load_flower17, get_view_blocks
 
 DATASET = "flower17"
-appr_levels = [l/680 for l in [10, 50, 100, 200, 400, 500, 600, 680]]
-# appr_levels = [0.06]
-# lambda_range = [1]
-# eta_range = [1]
+appr_levels = [l/1020 for l in [10, 50, 100, 200, 400, 500, 600, 680]]
 eta_range = [10**i for i in range(-3, 3)]
 lambda_range = [10**i for i in range(-8, 2)]
+# appr_levels = [0.06]
+# lambda_range = [10**-3, 1]
+# eta_range = [1]
+
 ITER = 10
 PATH = "results/view/{}/mvml/mvml".format(DATASET)
 
@@ -61,13 +62,12 @@ for a in appr_levels:
 
                     mvml = one_vs_all_mvml_train(train_x, train_y, 17, l, e, a)
                     pred = one_vs_all_mvml_predict(val_x, mvml)
-
+                    print(val_y, pred)
                     p_acc = accuracy_score(val_y, pred)
 
                     tunin_acc[(l,e)] = p_acc
 
             best_l, best_e = max(tunin_acc, key=tunin_acc.get)
-
             t2 = time.time()
             print("tuning time:", t2-t1)
             # training
