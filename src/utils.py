@@ -99,6 +99,18 @@ def get_view_blocks(x, inds, nb_views, nb_insts):
         
     return d
 
+def multiview_kernels(x, kernel, nb_views, gamma=None):
+
+    matrices = {}
+    feats_per_view = x.shape[1] // nb_views
+
+    for v in range(nb_views):
+        view_m = kernel(x[:, v*feats_per_view: (1+v)*feats_per_view], gamma=gamma)
+
+        matrices[v] = view_m
+
+    return matrices
+
 # ----------------------------------------------------------------- DATASET LOADERS
 from scipy.io import loadmat
 
