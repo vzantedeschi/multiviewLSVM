@@ -111,6 +111,9 @@ def multiview_kernels(x, kernel, nb_views, gamma=None):
 
     return matrices
 
+def get_landmarks_projections(distances, land_ids, nb_views, nb_insts):
+    return np.hstack([distances[land_ids + v*nb_insts][:, land_ids] for v in range(nb_views)])
+
 # ----------------------------------------------------------------- DATASET LOADERS
 from scipy.io import loadmat
 
