@@ -174,18 +174,22 @@ def load_sarcos(id_task=1):
 
 def load_uwave():
 
-    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TRAIN", 'r')) as f_train:
+    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TRAIN"), 'r') as f_train:
 
-        reader = csv.reader(f_train)
+        reader = csv.reader(f_train, quoting=csv.QUOTE_NONNUMERIC)
         train = np.asarray(list(reader))
         train_y, train_x = train[:, 0], train[:, 1:]
 
-    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TRAIN", 'r')) as f_test:
+    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TEST"), 'r') as f_test:
 
-        reader = csv.reader(f_test)
-        test = list(reader)
+        reader = csv.reader(f_test, quoting=csv.QUOTE_NONNUMERIC)
+        test = np.asarray(list(reader))
         test_y, test_x = test[:, 0], test[:, 1:]
 
+    assert train_x.shape == (896, 945), train_x.shape
+    assert test_x.shape == (3582, 945), test_x.shape
+
+    return train_x, train_y, test_x, test_y
 
 def csv_to_dict(filename):
 
