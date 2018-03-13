@@ -89,13 +89,15 @@ def select_landmarks(x, n):
     return x[random.sample(range(m), min(m, n))]
 
 def select_from_multiple_views(x, inds, lands, nb_views, nb_insts):
-    return np.hstack([x[inds + v*nb_insts][:, lands] for v in range(nb_views)])
+    r = np.hstack([x[inds][:, lands, v] for v in range(nb_views)])
+    assert r.shape == (len(inds), len(lands)*nb_views)
+    return r
 
-def get_view_blocks(x, inds, nb_views, nb_insts):
+def get_view_blocks(x, inds_1, inds_2, nb_views):
     d = {}
 
     for v in range(nb_views):
-        d[v] = x[inds + v*nb_insts]
+        d[v] = x[inds_1][:, inds_2, v]
         
     return d
 
@@ -126,16 +128,21 @@ def load_flower17(process=None):
 
     dist_matrices = dict(dist_mat1, **dist_mat2)
 
-    matrix = []
+    matrix, mean_fts = [], []
     for k, val in dist_matrices.items():
         if not k.startswith("__"):
 
             if process:
                 val = process(val)
 
-            matrix.append(val)
-    matrix = np.vstack(matrix)
-    assert matrix.shape == (1360 * 7, 1360), matrix.shape
+            matrix.append(val[:, :, None])
+            mean_fts.append(np.mean(val, axis=0))
+
+    matrix = np.dstack(matrix)
+    mean_fts = np.vstack(mean_fts)
+
+    assert mean_fts.shape == (7, 1360), mean_fts.shape
+    assert matrix.shape == (1360, 1360, 7), matrix.shape
 
     splits = loadmat(os.path.join(DATAPATH, "flower17", "datasplits"))
 
@@ -147,7 +154,7 @@ def load_flower17(process=None):
     indices = list(range(1360))
     labels = np.asarray([i // 80 for i in indices])
 
-    return indices, labels, sets, matrix
+    return indices, labels, sets, matrix, mean_fts
 
 def load_sarcos(id_task=1):
 
