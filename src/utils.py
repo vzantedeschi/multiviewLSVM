@@ -101,13 +101,13 @@ def get_view_blocks(x, inds_1, inds_2, nb_views):
         
     return d
 
-def multiview_kernels(x, kernel, nb_views, gamma=None):
+def multiview_kernels(x1, x2, kernel, nb_views, gamma=None):
 
     matrices = {}
-    feats_per_view = x.shape[1] // nb_views
+    feats_per_view = x1.shape[1] // nb_views
 
     for v in range(nb_views):
-        view_m = kernel(x[:, v*feats_per_view: (1+v)*feats_per_view], gamma=gamma)
+        view_m = kernel(x1[:, v*feats_per_view: (1+v)*feats_per_view], x2[:, v*feats_per_view: (1+v)*feats_per_view], gamma=gamma)
 
         matrices[v] = view_m
 
@@ -178,13 +178,13 @@ def load_uwave():
 
         reader = csv.reader(f_train, quoting=csv.QUOTE_NONNUMERIC)
         train = np.asarray(list(reader))
-        train_y, train_x = train[:, 0], train[:, 1:]
+        train_y, train_x = train[:, 0] - 1, train[:, 1:]
 
     with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TEST"), 'r') as f_test:
 
         reader = csv.reader(f_test, quoting=csv.QUOTE_NONNUMERIC)
         test = np.asarray(list(reader))
-        test_y, test_x = test[:, 0], test[:, 1:]
+        test_y, test_x = test[:, 0] - 1, test[:, 1:]
 
     assert train_x.shape == (896, 945), train_x.shape
     assert test_x.shape == (3582, 945), test_x.shape

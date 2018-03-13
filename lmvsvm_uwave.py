@@ -15,7 +15,7 @@ kname = "rbf"
 landmarks = [10, 50, 100, 200, 400, 500, 600, 684]
 c_range = [10**i for i in range(-3, 4)]
 
-ITER = 5
+ITER = 10
 CV = 3
 PATH = "results/view/{}/lmvsvm".format(DATASET)
 
