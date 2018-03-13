@@ -55,7 +55,7 @@ for p in range(3):
 
     # tuning     
     for c in C_RANGE:
-        models = train_svm_per_view(train_x, train_y, 7, c)
+        models = train_svm_per_view(train_x, train_y, 17, 7, c)
         pred = predict_svm_per_view(val_x, val_y, 7, models)
         tuning_accs[c] += accuracy_score(val_y, pred)
 
@@ -66,7 +66,7 @@ for p in range(3):
     # training
     train_val_inds = np.hstack((train_inds, val_inds))
     train_val_x, train_val_y = get_view_blocks(dist_matrices, train_val_inds, train_val_inds, 7), labels[train_val_inds]
-    models = train_svm_per_view(train_val_x, train_val_y, 7, best_C)
+    models = train_svm_per_view(train_val_x, train_val_y, 17, 7, best_C)
     print(best_C)
 
     t3 = time.time()

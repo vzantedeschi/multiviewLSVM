@@ -118,6 +118,7 @@ def get_landmarks_projections(distances, land_ids, nb_views, nb_insts):
 
 # ----------------------------------------------------------------- DATASET LOADERS
 from scipy.io import loadmat
+import csv
 
 DATAPATH = "./datasets/"
 
@@ -170,6 +171,21 @@ def load_sarcos(id_task=1):
     test_x, test_y = test_array[:, :21], test_array[:, 20+id_task]
 
     return train_x, np.squeeze(train_y), test_x, np.squeeze(test_y)
+
+def load_uwave():
+
+    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TRAIN", 'r')) as f_train:
+
+        reader = csv.reader(f_train)
+        train = np.asarray(list(reader))
+        train_y, train_x = train[:, 0], train[:, 1:]
+
+    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TRAIN", 'r')) as f_test:
+
+        reader = csv.reader(f_test)
+        test = list(reader)
+        test_y, test_x = test[:, 0], test[:, 1:]
+
 
 def csv_to_dict(filename):
 
