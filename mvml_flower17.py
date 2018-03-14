@@ -10,20 +10,20 @@ from src.mvml import MVML, one_vs_all_mvml_train, one_vs_all_mvml_predict
 from src.utils import dict_to_csv, load_flower17, get_view_blocks
 
 DATASET = "flower17"
-appr_levels = [l/1020 for l in [10, 50, 100, 200, 400, 500, 600, 680]]
+appr_levels = [l/1020 for l in [10, 50, 100]]
 eta_range = [10**i for i in range(-3, 3)]
 lambda_range = [10**i for i in range(-8, 2)]
-# appr_levels = [0.06]
+# appr_levels = [10/1020]
 # lambda_range = [10**-3, 1]
 # eta_range = [1]
 
-ITER = 10
-PATH = "results/view/{}/mvml/mvml".format(DATASET)
+ITER = 2
+PATH = "results/view/{}/mvml".format(DATASET)
 
 print("learning on {} with MVML".format(DATASET))
 
 # datasets
-indices, labels, sets, dist_matrices = load_flower17()
+indices, labels, sets, dist_matrices, means = load_flower17()
 
 dist_matrices = rbf_kernel(dist_matrices)
 
@@ -48,9 +48,8 @@ for a in appr_levels:
             test_inds = sets[p][1]
             val_inds = sets[p][2]
 
-            train_x, train_y = get_view_blocks(dist_matrices, train_inds, 7, 1360), labels[train_inds]
-            val_x, val_y = get_view_blocks(dist_matrices, val_inds, 7, 1360), labels[val_inds]
-            test_x, test_y = get_view_blocks(dist_matrices, test_inds, 7, 1360), labels[test_inds]
+            train_x, train_y = get_view_blocks(dist_matrices, train_inds, train_inds, 7), labels[train_inds]
+            val_x, val_y = get_view_blocks(dist_matrices, val_inds, train_inds, 7), labels[val_inds]
 
             t1 = time.time()
 
@@ -72,19 +71,20 @@ for a in appr_levels:
             # training
 
             train_val_inds = np.hstack((train_inds, val_inds))
-            train_val_x, train_val_y = get_view_blocks(dist_matrices, train_val_inds, 7, 1360), labels[train_val_inds]
+            train_val_x, train_val_y = get_view_blocks(dist_matrices, train_val_inds, train_val_inds, 7), labels[train_val_inds]
             mvml = one_vs_all_mvml_train(train_val_x, train_val_y, 17, best_l, best_e, a)
 
             t3 = time.time()
             print("training time:", t3-t2)
 
+            test_x, test_y = get_view_blocks(dist_matrices, test_inds, train_val_inds, 7), labels[test_inds]
             pred = one_vs_all_mvml_predict(test_x, mvml)
             p_acc = accuracy_score(test_y, pred)
 
             t4 = time.time()
             print("testing time:", t4-t3)
 
-            accuracies.append(p_acc)
+            accuracies.append(p_acc*100)
             train_times.append(t3-t2)
             test_times.append(t4-t3)
 

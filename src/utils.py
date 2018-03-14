@@ -88,33 +88,40 @@ def select_landmarks(x, n):
 
     return x[random.sample(range(m), min(m, n))]
 
-def select_from_multiple_views(x, inds, lands, nb_views, nb_insts):
-    r = np.hstack([x[inds][:, lands, v] for v in range(nb_views)])
-    assert r.shape == (len(inds), len(lands)*nb_views)
+def select_from_multiple_views(x, inds, lands):
+    r = x[inds][:, lands, :]
     return r
 
-def get_view_blocks(x, inds_1, inds_2, nb_views):
+def get_view_dict(x):
     d = {}
 
-    for v in range(nb_views):
-        d[v] = x[inds_1][:, inds_2, v]
+    for v in range(x.shape[2]):
+        d[v] = x[:, :, v]
         
     return d
 
-def multiview_kernels(x1, x2, kernel, nb_views, gamma=None):
+def twod_array(x):
 
-    matrices = {}
-    feats_per_view = x1.shape[1] // nb_views
+    return np.hstack([x[:, :, v] for v in range(x.shape[2])])
+
+def concat_dict(x1, x2):
+
+    x = dict()
+
+    for i, (a, b) in enumerate(zip(x1, x2)):
+        x[i] = np.vstack(a, b)
+
+
+def multiview_kernels(x1, x2, kernel, gamma=None):
+
+    matrices = []
+    nb_views = x1.shape[2]
 
     for v in range(nb_views):
-        view_m = kernel(x1[:, v*feats_per_view: (1+v)*feats_per_view], x2[:, v*feats_per_view: (1+v)*feats_per_view], gamma=gamma)
+        view_m = kernel(x1[:, :, v], x2[:, :, v], gamma=gamma)
+        matrices.append(view_m)
 
-        matrices[v] = view_m
-
-    return matrices
-
-def get_landmarks_projections(distances, land_ids, nb_views, nb_insts):
-    return np.hstack([distances[land_ids + v*nb_insts][:, land_ids] for v in range(nb_views)])
+    return np.dstack(matrices)
 
 # ----------------------------------------------------------------- DATASET LOADERS
 from scipy.io import loadmat
@@ -179,15 +186,18 @@ def load_uwave():
         reader = csv.reader(f_train, quoting=csv.QUOTE_NONNUMERIC)
         train = np.asarray(list(reader))
         train_y, train_x = train[:, 0] - 1, train[:, 1:]
+        train_x = np.dstack([train_x[:, 315*i:315*(i+1)] for i in range(3)])
 
     with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TEST"), 'r') as f_test:
 
         reader = csv.reader(f_test, quoting=csv.QUOTE_NONNUMERIC)
         test = np.asarray(list(reader))
         test_y, test_x = test[:, 0] - 1, test[:, 1:]
+        test_x = np.dstack([test_x[:, 315*i:315*(i+1)] for i in range(3)])
 
-    assert train_x.shape == (896, 945), train_x.shape
-    assert test_x.shape == (3582, 945), test_x.shape
+
+    assert train_x.shape == (896, 315, 3), train_x.shape
+    assert test_x.shape == (3582, 315, 3), test_x.shape
 
     return train_x, train_y, test_x, test_y
 
@@ -202,17 +212,15 @@ def csv_to_dict(filename):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,kernel="linear",pca=False):
+def get_args(prog, dataset="flower17", strategy="lmvsvm", view_rec_type="zeros"):
 
-    parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog=prog, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-d", "--dataset", dest='dataset_name', default=dataset_name,
-                        help='dataset name')
-    parser.add_argument("-l", "--nblands", type=int, dest='nb_landmarks', default=nb_landmarks,
-                        help='number of landmarks')
-    parser.add_argument("-o", "--normalize", dest='norm', action="store_true",
-                        help='if set, the dataset is normalized')
-    parser.add_argument("-k", "--kernel", dest='kernel', default=kernel, choices=kernels.keys(),
-                        help='choice of projection function')
+    parser.add_argument("-d", "--dataset", dest='dataset', default=dataset,
+                        help='choice of dataset')
+    parser.add_argument("-s", "--strategy", dest='strategy', default=strategy,
+                        help='choice of learner')
+    parser.add_argument("-r", "--reconstr", dest='view_rec_type', default=view_rec_type,
+                        help='choice of reconstruction technique for missing views')
 
     return parser.parse_args()
