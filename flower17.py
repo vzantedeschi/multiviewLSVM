@@ -18,7 +18,7 @@ PATH = "results/view/{}/svm-per-view".format(DATASET)
 print("learning on {} with a SVM per view".format(DATASET))
 
 # datasets
-indices, labels, sets, dist_matrices, _ = load_flower17(rbf_kernel)
+indices, labels, sets, dist_matrices = load_flower17(rbf_kernel)
 
 # acc_list = []
 # std_list = []

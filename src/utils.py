@@ -11,6 +11,7 @@ from numpy import linalg as LA
 from liblinearutil import *
 from scipy.sparse import csr_matrix
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import normalize, scale
 
 
@@ -88,8 +89,8 @@ def select_landmarks(x, n):
 
     return x[random.sample(range(m), min(m, n))]
 
-def select_from_multiple_views(x, inds, lands):
-    r = x[inds][:, lands, :]
+def select_from_multiple_views(x, inds):
+    r = x[:, inds, :]
     return r
 
 def get_view_dict(x):
@@ -104,13 +105,6 @@ def twod_array(x):
 
     return np.hstack([x[:, :, v] for v in range(x.shape[2])])
 
-def concat_dict(x1, x2):
-
-    x = dict()
-
-    for i, (a, b) in enumerate(zip(x1, x2)):
-        x[i] = np.vstack(a, b)
-
 
 def multiview_kernels(x1, x2, kernel, gamma=None):
 
@@ -122,6 +116,26 @@ def multiview_kernels(x1, x2, kernel, gamma=None):
         matrices.append(view_m)
 
     return np.dstack(matrices)
+
+# ----------------------------------------------------------------- SPLITTERS
+
+def splits_generator(x, CV=3, sets=None):
+
+    if sets is not None:
+        for p in range(3):
+
+            train_inds = sets[p][0]
+            test_inds = sets[p][1]
+            val_inds = sets[p][2]
+
+            yield train_inds, val_inds, test_inds
+
+    else:
+        splitter = KFold(n_splits=CV)
+        for train_inds, val_inds in splitter.split(x):
+
+            yield train_inds, val_inds, None
+
 
 # ----------------------------------------------------------------- DATASET LOADERS
 from scipy.io import loadmat
@@ -144,12 +158,9 @@ def load_flower17(process=None):
                 val = process(val)
 
             matrix.append(val[:, :, None])
-            mean_fts.append(np.mean(val, axis=0))
 
     matrix = np.dstack(matrix)
-    mean_fts = np.vstack(mean_fts)
 
-    assert mean_fts.shape == (7, 1360), mean_fts.shape
     assert matrix.shape == (1360, 1360, 7), matrix.shape
 
     splits = loadmat(os.path.join(DATAPATH, "flower17", "datasplits"))
@@ -162,7 +173,7 @@ def load_flower17(process=None):
     indices = list(range(1360))
     labels = np.asarray([i // 80 for i in indices])
 
-    return indices, labels, sets, matrix, mean_fts
+    return labels, sets, matrix
 
 def load_sarcos(id_task=1):
 
@@ -216,8 +227,6 @@ def get_args(prog, dataset="flower17", strategy="lmvsvm", view_rec_type="zeros")
 
     parser = argparse.ArgumentParser(prog=prog, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-d", "--dataset", dest='dataset', default=dataset,
-                        help='choice of dataset')
     parser.add_argument("-s", "--strategy", dest='strategy', default=strategy,
                         help='choice of learner')
     parser.add_argument("-r", "--reconstr", dest='view_rec_type', default=view_rec_type,

@@ -17,7 +17,7 @@ lambda_range = [10**i for i in range(-8, 2)]
 # lambda_range = [10**-3, 1]
 # eta_range = [1]
 
-ITER = 2
+ITER = 5
 PATH = "results/view/{}/mvml".format(DATASET)
 
 print("learning on {} with MVML".format(DATASET))
