@@ -347,8 +347,9 @@ class MVML:
 
 
 # ------------------------------------------------------------------------------- MY PATCH
+from src.utils import multiview_kernels, select_from_multiple_views
 
-def one_vs_all_mvml_train(train_x, train_y, nb_classes, l, e, a):
+def one_vs_all_mvml_train(train_x, train_y, nb_classes, l, e, a, *args):
     models = {}
 
     for c in range(nb_classes):
@@ -364,7 +365,7 @@ def one_vs_all_mvml_train(train_x, train_y, nb_classes, l, e, a):
 
     return models
 
-def one_vs_all_mvml_predict(test_x, models):
+def one_vs_all_mvml_predict(test_x, models, *args):
 
     predictions = []
 
@@ -372,3 +373,12 @@ def one_vs_all_mvml_predict(test_x, models):
         predictions.append(values["clf"].predict_mvml(test_x, values["g"], values["w"]))
 
     return np.argmax(np.hstack(predictions), axis=1)
+
+def get_kernels(x1, x2=None, inds=None, kernel=None):
+
+    if kernel is None:
+        x = select_from_multiple_views(x1, inds)
+    else:
+        x = multiview_kernels(x1, x2, kernel)
+
+    return x

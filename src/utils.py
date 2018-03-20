@@ -11,6 +11,7 @@ from numpy import linalg as LA
 from liblinearutil import *
 from scipy.sparse import csr_matrix
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import normalize, scale
 
 
@@ -88,31 +89,57 @@ def select_landmarks(x, n):
 
     return x[random.sample(range(m), min(m, n))]
 
-def select_from_multiple_views(x, inds, lands, nb_views, nb_insts):
-    return np.hstack([x[inds + v*nb_insts][:, lands] for v in range(nb_views)])
+def select_from_multiple_views(x, inds):
+    r = x[:, inds, :]
+    return r
 
-def get_view_blocks(x, inds, nb_views, nb_insts):
+def get_view_dict(x):
     d = {}
 
-    for v in range(nb_views):
-        d[v] = x[inds + v*nb_insts]
+    for v in range(x.shape[2]):
+        d[v] = x[:, :, v]
         
     return d
 
-def multiview_kernels(x, kernel, nb_views, gamma=None):
+def twod_array(x):
 
-    matrices = {}
-    feats_per_view = x.shape[1] // nb_views
+    return np.hstack([x[:, :, v] for v in range(x.shape[2])])
+
+
+def multiview_kernels(x1, x2, kernel, gamma=None):
+
+    matrices = []
+    nb_views = x1.shape[2]
 
     for v in range(nb_views):
-        view_m = kernel(x[:, v*feats_per_view: (1+v)*feats_per_view], gamma=gamma)
+        view_m = kernel(x1[:, :, v], x2[:, :, v], gamma=gamma)
+        matrices.append(view_m)
 
-        matrices[v] = view_m
+    return np.dstack(matrices)
 
-    return matrices
+# ----------------------------------------------------------------- SPLITTERS
+
+def splits_generator(x, CV=3, sets=None):
+
+    if sets is not None:
+        for p in range(3):
+
+            train_inds = sets[p][0]
+            test_inds = sets[p][1]
+            val_inds = sets[p][2]
+
+            yield train_inds, val_inds, test_inds
+
+    else:
+        splitter = KFold(n_splits=CV)
+        for train_inds, val_inds in splitter.split(x):
+
+            yield train_inds, val_inds, None
+
 
 # ----------------------------------------------------------------- DATASET LOADERS
 from scipy.io import loadmat
+import csv
 
 DATAPATH = "./datasets/"
 
@@ -123,16 +150,18 @@ def load_flower17(process=None):
 
     dist_matrices = dict(dist_mat1, **dist_mat2)
 
-    matrix = []
+    matrix, mean_fts = [], []
     for k, val in dist_matrices.items():
         if not k.startswith("__"):
 
             if process:
                 val = process(val)
 
-            matrix.append(val)
-    matrix = np.vstack(matrix)
-    assert matrix.shape == (1360 * 7, 1360), matrix.shape
+            matrix.append(val[:, :, None])
+
+    matrix = np.dstack(matrix)
+
+    assert matrix.shape == (1360, 1360, 7), matrix.shape
 
     splits = loadmat(os.path.join(DATAPATH, "flower17", "datasplits"))
 
@@ -144,7 +173,7 @@ def load_flower17(process=None):
     indices = list(range(1360))
     labels = np.asarray([i // 80 for i in indices])
 
-    return indices, labels, sets, matrix
+    return labels, sets, matrix
 
 def load_sarcos(id_task=1):
 
@@ -161,6 +190,28 @@ def load_sarcos(id_task=1):
 
     return train_x, np.squeeze(train_y), test_x, np.squeeze(test_y)
 
+def load_uwave():
+
+    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TRAIN"), 'r') as f_train:
+
+        reader = csv.reader(f_train, quoting=csv.QUOTE_NONNUMERIC)
+        train = np.asarray(list(reader))
+        train_y, train_x = train[:, 0].astype(int) - 1, train[:, 1:]
+        train_x = np.dstack([train_x[:, 315*i:315*(i+1)] for i in range(3)])
+
+    with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TEST"), 'r') as f_test:
+
+        reader = csv.reader(f_test, quoting=csv.QUOTE_NONNUMERIC)
+        test = np.asarray(list(reader))
+        test_y, test_x = test[:, 0].astype(int) - 1, test[:, 1:]
+        test_x = np.dstack([test_x[:, 315*i:315*(i+1)] for i in range(3)])
+
+
+    assert train_x.shape == (896, 315, 3), train_x.shape
+    assert test_x.shape == (3582, 315, 3), test_x.shape
+    
+    return train_x, train_y, test_x, test_y
+
 def csv_to_dict(filename):
 
     with open(filename, 'r') as csv_file:
@@ -172,17 +223,13 @@ def csv_to_dict(filename):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog,dataset_name="svmguide1",nb_clusters=1,nb_landmarks=10,kernel="linear",pca=False):
+def get_args(prog, dataset="flower17", strategy="lmvsvm", view_rec_type="zeros"):
 
-    parser = argparse.ArgumentParser(prog=prog,formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog=prog, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-d", "--dataset", dest='dataset_name', default=dataset_name,
-                        help='dataset name')
-    parser.add_argument("-l", "--nblands", type=int, dest='nb_landmarks', default=nb_landmarks,
-                        help='number of landmarks')
-    parser.add_argument("-o", "--normalize", dest='norm', action="store_true",
-                        help='if set, the dataset is normalized')
-    parser.add_argument("-k", "--kernel", dest='kernel', default=kernel, choices=kernels.keys(),
-                        help='choice of projection function')
+    parser.add_argument("-s", "--strategy", dest='strategy', default=strategy,
+                        help='choice of learner')
+    parser.add_argument("-r", "--reconstr", dest='view_rec_type', default=view_rec_type,
+                        help='choice of reconstruction technique for missing views')
 
     return parser.parse_args()
