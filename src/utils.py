@@ -185,8 +185,8 @@ def load_sarcos(id_task=1):
     assert train_array.shape == (44484, 28), train_array.shape
     assert test_array.shape == (4449, 28), test_array.shape
 
-    train_x, train_y = train_array[:, :21], train_array[:, 20+id_task]
-    test_x, test_y = test_array[:, :21], test_array[:, 20+id_task]
+    train_x, train_y = np.dstack([train_array[:, i*7:(i+1)*7][:, :, None] for i in range(3)]), train_array[:, 20+id_task]
+    test_x, test_y = np.dstack([test_array[:, i*7:(i+1)*7][:, :, None] for i in range(3)]), test_array[:, 20+id_task]
 
     return train_x, np.squeeze(train_y), test_x, np.squeeze(test_y)
 
@@ -209,7 +209,7 @@ def load_uwave():
 
     assert train_x.shape == (896, 315, 3), train_x.shape
     assert test_x.shape == (3582, 315, 3), test_x.shape
-    
+
     return train_x, train_y, test_x, test_y
 
 def csv_to_dict(filename):
