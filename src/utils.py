@@ -196,20 +196,20 @@ def load_uwave():
 
         reader = csv.reader(f_train, quoting=csv.QUOTE_NONNUMERIC)
         train = np.asarray(list(reader))
-        train_y, train_x = train[:, 0] - 1, train[:, 1:]
+        train_y, train_x = train[:, 0].astype(int) - 1, train[:, 1:]
         train_x = np.dstack([train_x[:, 315*i:315*(i+1)] for i in range(3)])
 
     with open(os.path.join(DATAPATH, "uwave", "UWaveGestureLibraryAll_TEST"), 'r') as f_test:
 
         reader = csv.reader(f_test, quoting=csv.QUOTE_NONNUMERIC)
         test = np.asarray(list(reader))
-        test_y, test_x = test[:, 0] - 1, test[:, 1:]
+        test_y, test_x = test[:, 0].astype(int) - 1, test[:, 1:]
         test_x = np.dstack([test_x[:, 315*i:315*(i+1)] for i in range(3)])
 
 
     assert train_x.shape == (896, 315, 3), train_x.shape
     assert test_x.shape == (3582, 315, 3), test_x.shape
-
+    
     return train_x, train_y, test_x, test_y
 
 def csv_to_dict(filename):

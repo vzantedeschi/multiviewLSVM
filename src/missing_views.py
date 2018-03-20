@@ -6,7 +6,7 @@ def set_random_views_to_value(x, r, r_type="none", sym=False):
 
     m = len(x)
     nb_views = x.shape[2]
-    
+
     x_copy = x.copy()
     zero_ids = choice(range(m*nb_views), int(r*m*nb_views))
 

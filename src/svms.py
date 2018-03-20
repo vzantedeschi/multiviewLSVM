@@ -1,6 +1,7 @@
 import numpy as np
 from svmutil import *
 
+from src.utils import multiview_kernels
 # ----------------------------------------------------------------------- MULTIVIEW BASELINES
 
 def get_kernels(x1, x2=None, inds=None, kernel=None):
@@ -22,6 +23,7 @@ def one_vs_all_svm_train(train_x, train_y, c, params):
         y = train_y.copy()
         y[train_y == cl] = 1
         y[train_y != cl] = -1
+
         # add serial number
         x = np.c_[np.arange(len(y))+1, train_x]
 
@@ -51,8 +53,7 @@ def one_vs_all_svm_predict(test_x, test_y, models):
 
 def train(x_matrices, y, c, params='-s 0 -t 4 -b 1 -q'):
     models = []
-
-    for x_m in x_matrices:
+    for _, x_m in x_matrices.items():
         view_models = one_vs_all_svm_train(x_m, y, c, params)
         models.append(view_models)
 
