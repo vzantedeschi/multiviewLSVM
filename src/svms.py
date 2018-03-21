@@ -13,7 +13,7 @@ def get_kernels(x1, x2=None, inds=None, kernel=None):
 
     return x
 
-def one_vs_all_svm_train(train_x, train_y, c, params):
+def one_vs_all_svm_train(train_x, train_y, c, params='-s 0 -t 4 -b 1 -q'):
     models = []
 
     nb_classes = max(train_y) + 1
@@ -31,6 +31,15 @@ def one_vs_all_svm_train(train_x, train_y, c, params):
         models.append(model)
 
     return models
+
+def svr_train(train_x, train_y, c, params='-s 3 -t 4 -b 1 -q'):
+
+    # add serial number
+    x = np.c_[np.arange(len(train_y))+1, train_x]
+
+    model = svm_train(train_y.tolist(), x.tolist(), '-c {} '.format(c) + params)
+
+    return model
 
 def one_vs_all_svm_predict(test_x, test_y, models):
 
@@ -51,26 +60,39 @@ def one_vs_all_svm_predict(test_x, test_y, models):
     labels = np.argmax(scores, axis=1)
     return labels, scores[:, labels]
 
-def train(x_matrices, y, c, params='-s 0 -t 4 -b 1 -q'):
+def svr_predict(test_x, test_y, model):
+
+    _, _, p_vals = svm_predict(test_y.tolist(), test_x.tolist(), model, "-q")
+
+    return p_vals
+
+def train(x, y, c, classify=True):
     models = []
-    for _, x_m in x_matrices.items():
-        view_models = one_vs_all_svm_train(x_m, y, c, params)
+    for _, x_m in x.items():
+
+        if classify:
+            view_models = one_vs_all_svm_train(x_m, y, c)
+
+        else:
+            view_models = svr_train(x_m, y, c)
+
         models.append(view_models)
 
     return models
 
-def predict(x_matrices, y, models, classify=True):
+def predict(x, y, models, classify=True):
 
-    predictions = []
     scores = []
 
-    for v, view_models in enumerate(models):
-
-        p_label, p_vals = one_vs_all_svm_predict(x_matrices[v], y, view_models)
-        predictions.append(p_label)
-        scores.append(p_vals)
-
     if classify:
+        predictions = []
+
+        for v, view_models in enumerate(models):
+
+            p_label, p_vals = one_vs_all_svm_predict(x[v], y, view_models)
+            predictions.append(p_label)
+            scores.append(p_vals)
+
         predictions = np.vstack(predictions).astype(int)
         m = len(y)
         most_frequent_label = np.empty(m)
@@ -80,6 +102,11 @@ def predict(x_matrices, y, models, classify=True):
 
         return most_frequent_label
 
-    return np.mean(np.hstack(scores), axis=1)
-            
+    else:
 
+        for v, view_model in enumerate(models):
+
+            p_vals = svr_predict(x[v], y, view_model)
+            scores.append(p_vals)
+
+        return np.mean(np.hstack(scores), axis=1)
