@@ -32,61 +32,51 @@ test_time_list = []
 
 for a in appr_levels:
 
-    accuracies = []
-    train_times = []
-    test_times = []
+    # tuning
+    t1 = time.time()
 
-    for it in range(ITER):
+    tuning_acc = {}.fromkeys(itertools.product(lambda_range, eta_range), 0.)
 
-        # tuning
-        t1 = time.time()
+    for train_inds, val_inds, _ in splits_generator(X, CV, None):
 
-        tuning_acc = {}.fromkeys(itertools.product(lambda_range, eta_range), 0.)
+        train_y, val_y = Y[train_inds], Y[val_inds]
 
-        for train_inds, val_inds, _ in splits_generator(X, CV, None):
+        train_x = get_view_dict(get_kernels(X[train_inds], X[train_inds], kernel=rbf_kernel))
+        val_x = get_view_dict(get_kernels(X[val_inds], X[train_inds], kernel=rbf_kernel))
 
-            train_y, val_y = Y[train_inds], Y[val_inds]
+        for l in lambda_range:
+            for e in eta_range:
 
-            train_x = get_view_dict(get_kernels(X[train_inds], X[train_inds], kernel=rbf_kernel))
-            val_x = get_view_dict(get_kernels(X[val_inds], X[train_inds], kernel=rbf_kernel))
+                mvml = one_vs_all_mvml_train(train_x, train_y, 8, l, e, a)
+                pred = one_vs_all_mvml_predict(val_x, mvml)
+                p_acc = accuracy_score(val_y, pred)
 
-            for l in lambda_range:
-                for e in eta_range:
+                tuning_acc[(l,e)] += p_acc
 
-                    mvml = one_vs_all_mvml_train(train_x, train_y, 8, l, e, a)
-                    pred = one_vs_all_mvml_predict(val_x, mvml)
-                    p_acc = accuracy_score(val_y, pred)
+    best_l, best_e = max(tuning_acc, key=tuning_acc.get)
 
-                    tuning_acc[(l,e)] += p_acc
+    t2 = time.time()
+    print("tuning time:", t2-t1)
 
-        best_l, best_e = max(tuning_acc, key=tuning_acc.get)
+    # training
 
-        t2 = time.time()
-        print("tuning time:", t2-t1)
+    train_val_x = get_view_dict(get_kernels(X, X, kernel=rbf_kernel))
+    mvml = one_vs_all_mvml_train(train_val_x, Y, 8, best_l, best_e, a)
 
-        # training
+    t3 = time.time()
+    print("training time:", t3-t2)
 
-        train_val_x = get_view_dict(get_kernels(X, X, kernel=rbf_kernel))
-        mvml = one_vs_all_mvml_train(train_val_x, Y, 8, best_l, best_e, a)
+    test_x = get_view_dict(get_kernels(test_X, X, kernel=rbf_kernel))
+    
+    pred = one_vs_all_mvml_predict(test_x, mvml)
+    p_acc = accuracy_score(test_Y, pred)
 
-        t3 = time.time()
-        print("training time:", t3-t2)
+    t4 = time.time()
+    print("testing time:", t4-t3)
 
-        test_x = get_view_dict(get_kernels(test_X, X, kernel=rbf_kernel))
-        
-        pred = one_vs_all_mvml_predict(test_x, mvml)
-        p_acc = accuracy_score(test_Y, pred)
-
-        t4 = time.time()
-        print("testing time:", t4-t3)
-
-        accuracies.append(p_acc*100)
-        train_times.append(t3-t2)
-        test_times.append(t4-t3)
-
-    acc_list.append(mean(accuracies))
-    std_list.append(stdev(accuracies))
-    train_time_list.append(mean(train_times))
-    test_time_list.append(mean(test_times))
+    acc_list.append(p_acc*100)
+    std_list.append(0.)
+    train_time_list.append(t3-t2)
+    test_time_list.append(t4-t3)
 
 dict_to_csv({'accuracy':acc_list,'error':std_list,'train_time':train_times,'test_time':test_times},["nb_iter={},cv={}".format(ITER, CV)], PATH+".csv")
