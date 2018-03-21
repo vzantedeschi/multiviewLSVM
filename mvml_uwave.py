@@ -10,7 +10,7 @@ from src.mvml import one_vs_all_mvml_train, one_vs_all_mvml_predict, get_kernels
 from src.utils import dict_to_csv, load_uwave, normalized_mse, multiview_kernels, splits_generator, get_view_dict
 
 DATASET = "uwave"
-appr_levels = [l/598 for l in [10, 50, 100]]
+appr_levels = [l/896 for l in [10, 50, 100, 200]]
 eta_range = [10**i for i in range(-3, 3)]
 lambda_range = [10**i for i in range(-8, 2)]
 # appr_levels = [0.06]
@@ -19,7 +19,7 @@ lambda_range = [10**i for i in range(-8, 2)]
 
 CV = 3
 ITER = 4
-PATH = "results/view/{}/mvml".format(DATASET)
+PATH = "results/view/{}/mvml2".format(DATASET)
 
 print("learning on {} with MVML".format(DATASET))
 
