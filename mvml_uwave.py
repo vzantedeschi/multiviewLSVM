@@ -79,4 +79,4 @@ for a in appr_levels:
     train_time_list.append(t3-t2)
     test_time_list.append(t4-t3)
 
-dict_to_csv({'accuracy':acc_list,'error':std_list,'train_time':train_time_list,'test_time':test_time_list},["nb_iter={},cv={}".format(ITER, CV)], PATH+".csv")
+dict_to_csv({'accuracy':acc_list,'error':std_list,'train_time':train_time_list,'test_time':test_time_list, 'rank':appr_levels},["nb_iter={},cv={}".format(ITER, CV)], PATH+".csv")
