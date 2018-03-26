@@ -2,12 +2,14 @@ import numpy as np
 
 from numpy.random import choice
 
-def set_random_views_to_value(x, r, r_type="none", sym=False):
+def set_random_views_to_value(x, y, r, r_type="none", sym=False):
 
     m = len(x)
     nb_views = x.shape[2]
 
     x_copy = x.copy()
+    y_copy = y.copy()
+
     zero_ids = choice(range(m*nb_views), int(r*m*nb_views))
 
     if r_type in ["means", "none", "reconstruction"]:
@@ -30,4 +32,9 @@ def set_random_views_to_value(x, r, r_type="none", sym=False):
             nans_inds = np.isnan(x_copy[:, :, v])[:, 0]
             x_copy[nans_inds, :, v] = means[:, v]
 
-    return x_copy
+    # drop points whose features are all nans
+    inds = ~np.isnan(x_copy).all(axis=(1,2))
+    x_copy = x_copy[inds]
+    y_copy = y_copy[inds]
+
+    return x_copy, y_copy

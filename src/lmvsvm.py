@@ -21,9 +21,32 @@ def recontruct_views(proj_sample, proj_landmarks):
     L = np.hstack([proj_landmarks[:, :, v] for v in range(nb_views)])
     M = np.hstack([proj_sample[:, :, v] for v in range(nb_views)])
 
-    R, res, k, _ = lstsq(L.T, M.T, check_finite=False)
+    R = missing_lstsq(L, M)
 
-    return np.dot(R.T, L), sum(res), k
+    return np.dot(R, L)
+
+def missing_lstsq(A, B):
+    """ Code adapted from http://alexhwilliams.info/itsneuronalblog/2018/02/26/censored-lstsq/
+    Solves least squares problem subject to missing data.
+
+    Note: uses a broadcasted solve for speed.
+
+    Args
+    ----
+    A (ndarray) : l x lv matrix
+    B (ndarray) : m x lv matrix
+
+    Returns
+    -------
+    X (ndarray) : m x l matrix that minimizes norm(M*(B - XA))
+    """
+    mask = ~np.isnan(B) 
+
+    X = np.empty((B.shape[0], A.shape[0]))
+    for i in range(B.shape[0]):
+        m = mask[i] # drop rows where mask is zero
+        X[i] = lstsq(A[:, m].T, B[i, m], check_finite=False)[0]
+    return X
 
 def train(x, y, c, params='-s 2 -B 1 -q'):
     return liblin.train(y.tolist(), x.tolist(), '-c {} '.format(c) + params)
