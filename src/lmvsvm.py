@@ -2,6 +2,7 @@ import numpy as np
 
 import liblinearutil as liblin
 from scipy.linalg import lstsq
+from scipy.optimize import leastsq, minimize
 
 from src.utils import select_from_multiple_views, select_landmarks, multiview_kernels
 
@@ -21,7 +22,7 @@ def recontruct_views(proj_sample, proj_landmarks):
     L = np.hstack([proj_landmarks[:, :, v] for v in range(nb_views)])
     M = np.hstack([proj_sample[:, :, v] for v in range(nb_views)])
 
-    R = missing_lstsq(L, M)
+    R, _ = missing_lstsq(L, M)
 
     return np.dot(R, L)
 
@@ -44,9 +45,9 @@ def missing_lstsq(A, B):
 
     X = np.empty((B.shape[0], A.shape[0]))
     for i in range(B.shape[0]):
-        m = mask[i] # drop rows where mask is zero
+        m = mask[i]
         X[i] = lstsq(A[:, m].T, B[i, m], check_finite=False)[0]
-    return X
+    return X, mask
 
 def train(x, y, c, params='-s 2 -B 1 -q'):
     return liblin.train(y.tolist(), x.tolist(), '-c {} '.format(c) + params)
@@ -60,3 +61,81 @@ def predict(x, y, model, classify=True):
 
     return p_vals
 
+# -------------------------------------------------------------- ALTERNATING LEARNING R, theta
+
+# def obj_function(R, i, x, y, lands, svm, mask, c1, c2): 
+    
+#     _, _, svm_pred = liblin.predict(y[i:i], [np.dot(R, lands).tolist()], svm, "-q")
+#     cost = c2 * (x[i, mask] - np.dot(R, lands[:, mask]))**2
+#     cost += c1 * (1 - y[i] * svm_pred[0][y[i]])
+
+#     return cost
+
+def obj_function(R, i, x, y, lands, svm, mask, c1, c2): 
+    l = len(lands)
+
+    m_i = mask[i]
+    cost = c2*sum((x[i, m_i] - np.dot(R, lands[:, m_i]).T)**2)
+    _, _, svm_pred = liblin.predict(y[i:i], [np.dot(R, lands).tolist()], svm, "-q")
+    cost += c1*max(0, 1 - np.asarray(svm_pred)[0, y[i]])
+
+    return cost
+
+def slack_constraint(R, i, y, lands, svm):
+
+    l = len(lands)
+
+    _, _, svm_pred = liblin.predict(y[i:i], [np.dot(R, lands).tolist()], svm, "-q")
+
+    return np.repeat(1 - np.asarray(svm_pred)[0, y[i]], l)
+
+
+def alternating_train(x, y, lands, c1, c2=1, params='-s 2 -B 1 -q'):
+
+    nb_views = lands.shape[2]
+
+    L = np.hstack([lands[:, :, v] for v in range(nb_views)])
+    M = np.hstack([x[:, :, v] for v in range(nb_views)])
+
+    r0, mask = missing_lstsq(L, M)
+    s0 = np.dot(r0, L)
+
+    sample = s0.copy()
+    R = r0.copy()
+
+    y_list = y.tolist()
+    svm = liblin.train(y.tolist(), sample.tolist(), '-c {} '.format(c1) + params)
+
+    it = 0
+    while True:
+        it += 1
+
+        cost = 0
+        for i in range(len(x)):
+            print(i)
+            r_i = minimize(obj_function, R[i, :], args=(i, M, y, L, svm, mask, c1, c2), options={'disp':  True})
+            # , constraints={"type":"ineq", "fun":slack_constraint, "args":(i, y_list, L, svm)}
+            R[i] = r_i.x
+            cost += r_i.fun
+        print(cost)
+
+        sample =  np.dot(R, L)
+
+        svm = liblin.train(y.tolist(), sample.tolist(), '-c {} '.format(c1) + params)
+
+        _, p_acc, _ = liblin.predict(y, sample.tolist(), svm, "-q")
+        print(p_acc)
+        if it == 10:
+            break
+    return svm 
+
+def alternating_predict(x, y, proj_landmarks, model, classify=True):
+
+    sample = recontruct_views(x, proj_landmarks)
+
+    p_label, p_acc, p_vals = liblin.predict(y.tolist(), sample.tolist(), model, "-q")
+
+    if classify:
+        return p_label
+
+    return p_vals
