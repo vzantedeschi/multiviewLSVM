@@ -7,21 +7,17 @@ from sklearn.metrics.pairwise import rbf_kernel
 
 from src.missing_views import set_random_views_to_value, laplacian_reconstruction
 from src.svms import *
-from src.utils import dict_to_csv, load_flower17, get_args, get_view_dict, twod_array, splits_generator, load_uwave
+from src.utils import dict_to_csv, load_flower17, get_args, get_view_dict, twod_array, splits_generator, load_uwave, multiview_kernels
 
 CV = 3
 
-# ratios_missing = [0.05*i for i in range(1, 11)]
-# c_range = [10**i for i in range(-3, 4)]
+ratios_missing = [0.05*i for i in range(1, 11)]
+c_range = [10**i for i in range(-3, 4)]
 
-ratios_missing = [0.05]
-c_range = [1]
+# ratios_missing = [0]
+# c_range = [1]
 
-kernel = rbf_kernel
-sets = None
 X, Y, test_X, test_Y = load_uwave()
-
-value = 0.
 
 ITER = 10
 PATH = "results/view/uwave/missing/svms/laplacian"
@@ -43,54 +39,54 @@ for r in ratios_missing:
         train_times = []
         test_times = []
 
-        for train_inds, val_inds, _ in splits_generator(X, CV, sets):
+        # erase some views from training 
+        x, y = set_random_views_to_value(X, Y, r, r_type="none")
+        test_x, test_y = set_random_views_to_value(test_X, test_Y, r, r_type="none")
 
-            train_x, train_y = X[train_inds], Y[train_inds]
-            val_x, val_y = X[val_inds], Y[val_inds]
+        # kernelize and reconstruct views
+        k_x, y, test_y = laplacian_reconstruction(x, y, rbf_kernel, test_x, test_y)
 
-            # erase some views from training
-            inc_train_x, train_y = set_random_views_to_value(train_x, train_y, r, r_type="none")
+        # cross-validation
+        for train_inds, val_inds, _ in splits_generator(y, CV, None):
 
-            # kernelize and reconstruct views
-            k_train_x, inc_train_y = laplacian_reconstruction(inc_train_x, train_y, rbf_kernel)
-            k_train_x = get_view_dict(k_train_x)
-            k_val_x = get_view_dict(get_kernels(val_x, train_x, kernel=kernel))
+            train_y = y[train_inds]
+            val_y = y[val_inds]
+
+            k_train_x = get_view_dict(k_x[np.ix_(train_inds,train_inds)])
+            k_val_x = get_view_dict(k_x[np.ix_(val_inds,train_inds)])
 
             t1 = time.time()
 
             # tuning     
             tuning_acc = {}.fromkeys(c_range, 0.)
             for c in c_range:
-                model = train(k_train_x, inc_train_y, c)
+                model = train(k_train_x, train_y, c)
                 pred = predict(k_val_x, val_y, model)
 
                 tuning_acc[c] = accuracy_score(pred, val_y)
+
             best_C = max(tuning_acc, key=tuning_acc.get)
 
             t2 = time.time()
             print("tuning time:", t2-t1)
 
             # training
-            inc_val_x, val_y = set_random_views_to_value(val_x, val_y, r, r_type="none")
-            train_val_x = np.vstack((inc_train_x, inc_val_x))
-            train_val_y = np.hstack((train_y, val_y))
-            k_train_val_x, inc_train_val_y = laplacian_reconstruction(train_val_x, train_val_y, rbf_kernel)
-            k_train_val_x = get_view_dict(k_train_val_x)
-
-
-            model = train(k_train_val_x, inc_train_val_y, best_C)
+            train_val_inds = np.hstack((train_inds,val_inds))
+            k_train_val_x = get_view_dict(k_x[np.ix_(train_val_inds,train_val_inds)])
+            model = train(k_train_val_x, y[train_val_inds], best_C)
 
             t3 = time.time()
             print("training time:", t3-t2)
 
-            k_test_x = get_view_dict(get_kernels(test_X, train_x, kernel=kernel))
+            test_inds = np.arange(len(test_y))+len(y)
+            k_test_x = get_view_dict(k_x[np.ix_(test_inds,train_val_inds)])
 
-            pred = predict(k_test_x, test_Y, model)
+            pred = predict(k_test_x, test_y, model)
 
             t4 = time.time()
             print("testing time:", t4-t3)
 
-            acc = accuracy_score(pred, test_Y)*100
+            acc = accuracy_score(pred, test_y)*100
             print(acc)
             accuracies.append(acc)
             train_times.append(t3-t2)

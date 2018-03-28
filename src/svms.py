@@ -50,6 +50,7 @@ def one_vs_all_svm_predict(test_x, test_y, models):
         y = test_y.copy()
         y[test_y == cl] = 1
         y[test_y != cl] = -1
+        
         # add serial number
         x = np.c_[np.arange(len(y))+1, test_x]
 

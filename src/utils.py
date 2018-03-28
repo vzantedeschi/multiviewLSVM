@@ -112,7 +112,11 @@ def multiview_kernels(x1, x2, kernel, gamma=None):
     nb_views = x1.shape[2]
 
     for v in range(nb_views):
-        view_m = kernel(x1[:, :, v], x2[:, :, v], gamma=gamma)
+        c1_inds = ~np.isnan(x1[:, :, v])[:, 0]
+        c2_inds = ~np.isnan(x2[:, :, v])[:, 0]
+
+        view_m = np.full((len(x1), len(x2)), np.nan)
+        view_m[np.ix_(c1_inds, c2_inds)] = kernel(x1[c1_inds, :, v], x2[c2_inds, :, v], gamma=gamma)
         matrices.append(view_m)
 
     return np.dstack(matrices)

@@ -40,12 +40,16 @@ def set_random_views_to_value(x, y, r, r_type="none", sym=False):
 
     return x_copy, y_copy
 
-def laplacian_reconstruction(x, y, kernel):
+def laplacian_reconstruction(x, y, kernel, x2=None, y2=None):
 
     x_copy = x.copy()
     y_copy = y.copy()
 
-    # select biggest view to be the principal view
+    if x2 is not None:
+        x2_copy = x2.copy()
+        y2_copy = y2.copy()
+
+    # select biggest view to be the principal view (only on train)
     nan_per_view = np.sum(np.isnan(x_copy), axis=(0, 1))
     v = np.argmin(nan_per_view)
 
@@ -53,12 +57,19 @@ def laplacian_reconstruction(x, y, kernel):
     inds = ~np.isnan(x_copy[:, :, v])[:, 0]
     x_copy = x_copy[inds]
     y_copy = y_copy[inds]
-    
+
+    if x2 is not None:
+        inds = ~np.isnan(x2_copy[:, :, v])[:, 0]
+        x2_copy = x2_copy[inds]
+        y2_copy = y2_copy[inds]
+
+        x_copy = np.vstack((x_copy, x2_copy))
+
     # compute principal view gram
     ref_gram = kernel(x_copy[:, :, v], x_copy[:, :, v])
     ref_laplacian = np.diag(np.sum(ref_gram, axis=1)) - ref_gram
-
     grams = []
+
     for view in range(len(nan_per_view)):
         if view == v:
             grams.append(ref_gram)
@@ -84,7 +95,11 @@ def laplacian_reconstruction(x, y, kernel):
             grams.append(view_gram)
 
     gram_views = np.dstack(grams)
-    assert not np.isnan(gram_views).any(), np.isnan(gram_views)
+    assert np.all(gram_views), np.isnan(gram_views)
 
-    return gram_views, y_copy
+    if x2 is None:
+        return gram_views, y_copy
+
+    else:
+        return gram_views, y_copy, y2_copy
 
