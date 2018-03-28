@@ -63,31 +63,35 @@ def predict(x, y, model, classify=True):
 
 # -------------------------------------------------------------- ALTERNATING LEARNING R, theta
 
-# def obj_function(R, i, x, y, lands, svm, mask, c1, c2): 
-    
+# def r_obj_function(R, i, x, y, lands, svm, mask, c1, c2): 
+#     l = len(lands)
+
+#     m_i = mask[i]
+#     cost = c2*sum((x[i, m_i] - np.dot(R, lands[:, m_i]).T)**2)
 #     _, _, svm_pred = liblin.predict(y[i:i], [np.dot(R, lands).tolist()], svm, "-q")
-#     cost = c2 * (x[i, mask] - np.dot(R, lands[:, mask]))**2
-#     cost += c1 * (1 - y[i] * svm_pred[0][y[i]])
+#     cost += c1*max(0, 1 - np.asarray(svm_pred)[0, y[i]])
 
 #     return cost
 
-def obj_function(R, i, x, y, lands, svm, mask, c1, c2): 
+def r_obj_function(R, x, y, lands, svm, mask, c1, c2): 
+    m = len(x)
     l = len(lands)
 
-    m_i = mask[i]
-    cost = c2*sum((x[i, m_i] - np.dot(R, lands[:, m_i]).T)**2)
-    _, _, svm_pred = liblin.predict(y[i:i], [np.dot(R, lands).tolist()], svm, "-q")
-    cost += c1*max(0, 1 - np.asarray(svm_pred)[0, y[i]])
+    r_2d = R.reshape(m, l)
+    _, _, svm_pred = liblin.predict(y, np.dot(r_2d, lands).tolist(), svm, "-q")
+
+    cost = c2*sum((x - np.dot(r_2d, lands))[mask]**2)
+    cost += c1*sum(np.max(0, 1 - np.asarray(svm_pred)[0, y]))
+    
+    # for i in range(len(x)):
+    #     m_i = mask[i]
+    #     cost += c2*sum((x[i, m_i] - np.dot(r_2d[i], lands[:, m_i]).T)**2)
+    #     cost += c1*max(0, 1 - np.asarray(svm_pred)[0, y[i]])
 
     return cost
 
-def slack_constraint(R, i, y, lands, svm):
-
-    l = len(lands)
-
-    _, _, svm_pred = liblin.predict(y[i:i], [np.dot(R, lands).tolist()], svm, "-q")
-
-    return np.repeat(1 - np.asarray(svm_pred)[0, y[i]], l)
+def mean_class_losses(svm, x, y, mask, r_costs):
+    pass
 
 
 def alternating_train(x, y, lands, c1, c2=1, params='-s 2 -B 1 -q'):
@@ -96,6 +100,9 @@ def alternating_train(x, y, lands, c1, c2=1, params='-s 2 -B 1 -q'):
 
     L = np.hstack([lands[:, :, v] for v in range(nb_views)])
     M = np.hstack([x[:, :, v] for v in range(nb_views)])
+
+    l = len(lands)
+    m = len(x)
 
     r0, mask = missing_lstsq(L, M)
     s0 = np.dot(r0, L)
@@ -110,22 +117,21 @@ def alternating_train(x, y, lands, c1, c2=1, params='-s 2 -B 1 -q'):
     while True:
         it += 1
 
-        cost = 0
-        for i in range(len(x)):
-            print(i)
-            r_i = minimize(obj_function, R[i, :], args=(i, M, y, L, svm, mask, c1, c2), options={'disp':  True})
-            # , constraints={"type":"ineq", "fun":slack_constraint, "args":(i, y_list, L, svm)}
-            R[i] = r_i.x
-            cost += r_i.fun
-        print(cost)
+        res = minimize(r_obj_function, R.flatten(), args=(M, y, L, svm, mask, c1, c2), options={'disp':  True})
+        # for i in range(len(x)):
+        #     r_i = minimize(r_obj_function, R[i, :], args=(i, M, y, L, svm, mask, c1, c2), options={'disp':  False})
+        #     R[i] = r_i.x
+        #     cost += r_i.fun
 
+        print(r_i.fun)
+        R = res.x.reshape(m, l)
         sample =  np.dot(R, L)
 
         svm = liblin.train(y.tolist(), sample.tolist(), '-c {} '.format(c1) + params)
 
         _, p_acc, _ = liblin.predict(y, sample.tolist(), svm, "-q")
         print(p_acc)
-        if it == 10:
+        if it == 1:
             break
     return svm 
 
