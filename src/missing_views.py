@@ -1,5 +1,6 @@
 import numpy as np
 
+from numpy.linalg import inv
 from numpy.random import choice
 
 def set_random_views_to_value(x, y, r, r_type="none", sym=False):
@@ -38,3 +39,52 @@ def set_random_views_to_value(x, y, r, r_type="none", sym=False):
     y_copy = y_copy[inds]
 
     return x_copy, y_copy
+
+def laplacian_reconstruction(x, y, kernel):
+
+    x_copy = x.copy()
+    y_copy = y.copy()
+
+    # select biggest view to be the principal view
+    nan_per_view = np.sum(np.isnan(x_copy), axis=(0, 1))
+    v = np.argmin(nan_per_view)
+
+    # drop points whose principal view is NaN
+    inds = ~np.isnan(x_copy[:, :, v])[:, 0]
+    x_copy = x_copy[inds]
+    y_copy = y_copy[inds]
+    
+    # compute principal view gram
+    ref_gram = kernel(x_copy[:, :, v], x_copy[:, :, v])
+    ref_laplacian = np.diag(np.sum(ref_gram, axis=1)) - ref_gram
+
+    grams = []
+    for view in range(len(nan_per_view)):
+        if view == v:
+            grams.append(ref_gram)
+        else:
+            m_inds = np.isnan(x_copy[:, :, view])[:, 0]
+            c_inds = ~m_inds
+
+            K_cc = kernel(x_copy[c_inds, :, view], x_copy[c_inds, :, view])
+            L_cm = ref_laplacian[c_inds][:, m_inds]
+            L_mm = ref_laplacian[m_inds][:, m_inds]
+            L_mm_inv = inv(L_mm)
+
+            view_gram = np.full(ref_gram.shape, np.nan)
+
+            view_gram[np.ix_(c_inds, c_inds)] = K_cc
+            view_gram[np.ix_(c_inds, m_inds)] = -np.dot(K_cc, np.dot(L_cm, L_mm_inv))
+            view_gram[np.ix_(m_inds, c_inds)] = -np.dot(L_mm_inv, np.dot(L_cm.T, K_cc))
+            view_gram[np.ix_(m_inds, m_inds)] = np.dot(L_mm_inv, np.dot(L_cm.T, np.dot(K_cc, np.dot(L_cm, L_mm_inv))))
+
+            # check symmetry
+            assert np.allclose(view_gram, view_gram.T, atol=1e-8)
+
+            grams.append(view_gram)
+
+    gram_views = np.dstack(grams)
+    assert not np.isnan(gram_views).any(), np.isnan(gram_views)
+
+    return gram_views, y_copy
+
