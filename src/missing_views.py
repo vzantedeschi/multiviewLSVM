@@ -3,13 +3,12 @@ import numpy as np
 from numpy.linalg import inv
 from numpy.random import choice
 
-def set_random_views_to_value(x, y, r, r_type="none", sym=False):
+def set_random_views_to_value(x, r, r_type="none", sym=False):
 
     m = len(x)
     nb_views = x.shape[2]
 
     x_copy = x.copy()
-    y_copy = y.copy()
 
     zero_ids = choice(range(m*nb_views), int(r*m*nb_views))
 
@@ -36,18 +35,15 @@ def set_random_views_to_value(x, y, r, r_type="none", sym=False):
     # drop points whose features are all nans
     inds = ~np.isnan(x_copy).all(axis=(1,2))
     x_copy = x_copy[inds]
-    y_copy = y_copy[inds]
 
-    return x_copy, y_copy
+    return x_copy, inds
 
-def laplacian_reconstruction(x, y, kernel, x2=None, y2=None):
+def laplacian_reconstruction(x, kernel=None, x2=None):
 
     x_copy = x.copy()
-    y_copy = y.copy()
 
     if x2 is not None:
         x2_copy = x2.copy()
-        y2_copy = y2.copy()
 
     # select biggest view to be the principal view (only on train)
     nan_per_view = np.sum(np.isnan(x_copy), axis=(0, 1))
@@ -55,29 +51,36 @@ def laplacian_reconstruction(x, y, kernel, x2=None, y2=None):
 
     # drop points whose principal view is NaN
     inds = ~np.isnan(x_copy[:, :, v])[:, 0]
-    x_copy = x_copy[inds]
-    y_copy = y_copy[inds]
+    x_copy = x_copy[inds]   
 
     if x2 is not None:
-        inds = ~np.isnan(x2_copy[:, :, v])[:, 0]
-        x2_copy = x2_copy[inds]
-        y2_copy = y2_copy[inds]
+        inds2 = ~np.isnan(x2_copy[:, :, v])[:, 0]
+        x2_copy = x2_copy[inds2]
 
         x_copy = np.vstack((x_copy, x2_copy))
 
     # compute principal view gram
-    ref_gram = kernel(x_copy[:, :, v], x_copy[:, :, v])
+    if kernel is not None:
+        ref_gram = kernel(x_copy[:, :, v], x_copy[:, :, v])
+    else:
+        x_copy = x_copy[:, inds]
+        ref_gram = x_copy[:, :, v]
+
     ref_laplacian = np.diag(np.sum(ref_gram, axis=1)) - ref_gram
     grams = []
 
     for view in range(len(nan_per_view)):
         if view == v:
             grams.append(ref_gram)
-        else:
+        else:  
             m_inds = np.isnan(x_copy[:, :, view])[:, 0]
             c_inds = ~m_inds
 
-            K_cc = kernel(x_copy[c_inds, :, view], x_copy[c_inds, :, view])
+            if kernel is not None:
+                K_cc = kernel(x_copy[c_inds, :, view], x_copy[c_inds, :, view])
+            else:
+                K_cc = x_copy[c_inds][:, c_inds, view]
+
             L_cm = ref_laplacian[c_inds][:, m_inds]
             L_mm = ref_laplacian[m_inds][:, m_inds]
             L_mm_inv = inv(L_mm)
@@ -95,11 +98,10 @@ def laplacian_reconstruction(x, y, kernel, x2=None, y2=None):
             grams.append(view_gram)
 
     gram_views = np.dstack(grams)
-    assert np.all(gram_views), np.isnan(gram_views)
 
     if x2 is None:
-        return gram_views, y_copy
+        return gram_views, inds
 
     else:
-        return gram_views, y_copy, y2_copy
+        return gram_views, inds, inds2
 
