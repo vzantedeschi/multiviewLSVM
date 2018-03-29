@@ -22,9 +22,7 @@ PATH = "results/view/{}/mvml".format(DATASET)
 print("learning on {} with MVML".format(DATASET))
 
 # datasets
-Y, sets, X = load_flower17()
-
-X = rbf_kernel(X)
+Y, sets, X = load_flower17(rbf_kernel)
 
 acc_list = []
 std_list = []
