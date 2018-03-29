@@ -54,7 +54,7 @@ def one_vs_all_svm_predict(test_x, test_y, models):
         # add serial number
         x = np.c_[np.arange(len(y))+1, test_x]
 
-        p_label, _, p_vals = svm_predict(y.tolist(), x.tolist(), model, "-q")
+        p_label, _, p_vals = svm_predict(y.tolist(), x.tolist(), model)
         scores.append(p_vals)
 
     scores = np.hstack(scores)
