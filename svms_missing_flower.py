@@ -3,8 +3,8 @@ import time
 from statistics import mean, stdev
 
 from sklearn.metrics import accuracy_score
-from sklearn.metrics.pairwise import rbf_kernel
 
+from src.kernels import rbf_kernel
 from src.missing_views import set_random_views_to_value, laplacian_reconstruction
 from src.svms import *
 from src.utils import dict_to_csv, load_flower17, get_args, get_view_dict, twod_array, splits_generator, multiview_kernels

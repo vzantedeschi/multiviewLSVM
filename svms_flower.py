@@ -20,17 +20,6 @@ print("learning on {} with a SVM per view".format(DATASET))
 # datasets
 indices, labels, sets, dist_matrices = load_flower17(rbf_kernel)
 
-# acc_list = []
-# std_list = []
-# train_time_list = []
-# test_time_list = []
-
-# for r in ratios_missing:
-
-#     mean_accuracies = []
-
-#     for i in range(ITER):
-
 accuracies = []
 train_times = []
 test_times = []
