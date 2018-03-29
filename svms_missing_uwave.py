@@ -26,8 +26,7 @@ print("learning on uwave with SVMs, missing views completed by Laplacian complet
 
 acc_list = []
 std_list = []
-train_time_list = []
-test_time_list = []
+time_list = []
 
 for r in ratios_missing:
     print(r, "\n")
@@ -36,17 +35,20 @@ for r in ratios_missing:
     for i in range(ITER):
 
         accuracies = []
-        train_times = []
-        test_times = []
+        times = []
 
         # erase some views from training 
         x, mask = set_random_views_to_value(X, r, r_type="none")
         test_x, test_mask = set_random_views_to_value(test_X, r, r_type="none")
 
         # kernelize and reconstruct views
+        t0 = time.time()
         k_x, mask, mask2 = laplacian_reconstruction(x, rbf_kernel, test_x)
 
         y, test_y = Y[mask], test_Y[mask2]
+
+        t10 = time.time()
+
         # cross-validation
         for train_inds, val_inds, _ in splits_generator(y, CV, None):
 
@@ -90,15 +92,13 @@ for r in ratios_missing:
             acc = accuracy_score(pred, test_y)*100
             print(acc)
             accuracies.append(acc)
-            train_times.append(t3-t2)
-            test_times.append(t4-t3)
+            times.append(t10-t0)
 
         mean_accuracies.append(mean(accuracies))
         print(mean(accuracies))
 
     acc_list.append(mean(mean_accuracies))
     std_list.append(stdev(mean_accuracies))
-    train_time_list.append(mean(train_times))
-    test_time_list.append(mean(test_times))
+    time_list.append(mean(times))
 
-dict_to_csv({'accuracy':acc_list,'error':std_list,'train_time':train_time_list,'test_time':test_time_list,'ratios':ratios_missing},["nb_iter={},cv={}".format(ITER,3)],PATH+".csv")
+dict_to_csv({'accuracy':acc_list,'error':std_list,'times':time_list,'ratios':ratios_missing},["nb_iter={},cv={}".format(ITER,3)],PATH+".csv")
