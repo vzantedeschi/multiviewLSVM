@@ -23,7 +23,7 @@ Y, sets, X = load_flower17(rbf_kernel)
 ITER = 10
 PATH = "results/view/flower17/missing/svms/laplacian"
 
-print("learning on uwave with SVMs, missing views completed by Laplacian completion")
+print("learning on flower with SVMs, missing views completed by Laplacian completion")
 
 acc_list = []
 std_list = []
