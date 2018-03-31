@@ -32,11 +32,11 @@ def set_random_views_to_value(x, r, r_type="none", sym=False):
             nans_inds = np.isnan(x_copy[:, :, v])[:, 0]
             x_copy[nans_inds, :, v] = means[:, v]
 
-    # drop points whose features are all nans
-    inds = ~np.isnan(x_copy).all(axis=(1,2))
-    x_copy = x_copy[inds]
+    # # drop points whose features are all nans
+    # inds = ~np.isnan(x_copy).all(axis=(1,2))
+    # x_copy = x_copy[inds]
 
-    return x_copy, inds
+    return x_copy
 
 def laplacian_reconstruction(x, kernel=None, x2=None):
 

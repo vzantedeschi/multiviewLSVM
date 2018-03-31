@@ -39,7 +39,7 @@ for r in ratios_missing:
         times = []
 
         # erase some views from training 
-        x, mask = set_random_views_to_value(X, r, r_type="none", sym=True)
+        x = set_random_views_to_value(X, r, r_type="none", sym=True)
 
         t0 = time.time()
         # kernelize and reconstruct views

@@ -14,7 +14,7 @@ CV = 3
 ratios_missing = [0.05*i for i in range(1, 11)]
 c_range = [10**i for i in range(-3, 4)]
 
-# ratios_missing = [0]
+# ratios_missing = [0.05]
 # c_range = [1]
 
 X, Y, test_X, test_Y = load_uwave()
@@ -30,16 +30,15 @@ time_list = []
 
 for r in ratios_missing:
     print(r, "\n")
-    mean_accuracies = []
+    accuracies = []
+    times = []
 
     for i in range(ITER):
 
-        accuracies = []
-        times = []
-
+        print(X.shape, Y.shape)
         # erase some views from training 
-        x, mask = set_random_views_to_value(X, r, r_type="none")
-        test_x, test_mask = set_random_views_to_value(test_X, r, r_type="none")
+        x = set_random_views_to_value(X, r, r_type="none")
+        test_x = set_random_views_to_value(test_X, r, r_type="none")
 
         # kernelize and reconstruct views
         t0 = time.time()
@@ -66,39 +65,36 @@ for r in ratios_missing:
                 model = train(k_train_x, train_y, c)
                 pred = predict(k_val_x, val_y, model)
 
-                tuning_acc[c] = accuracy_score(pred, val_y)
+                tuning_acc[c] += accuracy_score(pred, val_y)
 
-            best_C = max(tuning_acc, key=tuning_acc.get)
+        best_C = max(tuning_acc, key=tuning_acc.get)
 
-            t2 = time.time()
-            print("tuning time:", t2-t1)
+        t2 = time.time()
+        print("tuning time:", t2-t1)
 
-            # training
-            train_val_inds = np.hstack((train_inds,val_inds))
-            k_train_val_x = get_view_dict(k_x[np.ix_(train_val_inds,train_val_inds)])
-            model = train(k_train_val_x, y[train_val_inds], best_C)
+        # training
+        train_val_inds = np.hstack((train_inds,val_inds))
+        k_train_val_x = get_view_dict(k_x[np.ix_(train_val_inds,train_val_inds)])
+        model = train(k_train_val_x, y[train_val_inds], best_C)
 
-            t3 = time.time()
-            print("training time:", t3-t2)
+        t3 = time.time()
+        print("training time:", t3-t2)
 
-            test_inds = np.arange(len(test_y))+len(y)
-            k_test_x = get_view_dict(k_x[np.ix_(test_inds,train_val_inds)])
+        test_inds = np.arange(len(test_y))+len(y)
+        k_test_x = get_view_dict(k_x[np.ix_(test_inds,train_val_inds)])
 
-            pred = predict(k_test_x, test_y, model)
+        pred = predict(k_test_x, test_y, model)
 
-            t4 = time.time()
-            print("testing time:", t4-t3)
+        t4 = time.time()
+        print("testing time:", t4-t3)
 
-            acc = accuracy_score(pred, test_y)*100
-            print(acc)
-            accuracies.append(acc)
-            times.append(t10-t0)
+        acc = accuracy_score(pred, test_y)*100
+        print(acc)
+        accuracies.append(acc)
+        times.append(t10-t0)
 
-        mean_accuracies.append(mean(accuracies))
-        print(mean(accuracies))
-
-    acc_list.append(mean(mean_accuracies))
-    std_list.append(stdev(mean_accuracies))
+    acc_list.append(mean(accuracies))
+    std_list.append(stdev(accuracies))
     time_list.append(mean(times))
 
 dict_to_csv({'accuracy':acc_list,'error':std_list,'times':time_list,'ratios':ratios_missing},["nb_iter={},cv={}".format(ITER,3)],PATH+".csv")
