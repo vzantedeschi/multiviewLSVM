@@ -44,22 +44,24 @@ for r in ratios_missing:
         t0 = time.time()
         # kernelize and reconstruct views
         k_x, mask = laplacian_reconstruction(x)
+
         t10 = time.time()
 
+        inds = np.arange(len(X))
         # cross-validation
         for train_inds, val_inds, test_inds in splits_generator(Y, CV, sets):
 
             train_val_inds = np.hstack((train_inds,val_inds))
 
-            train_y = Y[train_inds[mask[train_inds]]]
-            val_y = Y[val_inds[mask[val_inds]]]
-            test_y = Y[test_inds[mask[test_inds]]]
-            train_val_y = Y[train_val_inds[mask[train_val_inds]]]
-
-            train_inds = mask[train_inds]
-            val_inds = mask[val_inds]
-            test_inds = mask[test_inds]
-            train_val_inds = mask[train_val_inds]
+            train_inds = np.isin(inds, train_inds)[mask]
+            val_inds = np.isin(inds, val_inds)[mask]
+            test_inds = np.isin(inds, test_inds)[mask]
+            train_val_inds = np.isin(inds, train_val_inds)[mask]
+            
+            train_y = Y[mask][train_inds]
+            val_y = Y[mask][val_inds]
+            test_y = Y[mask][test_inds]
+            train_val_y = Y[mask][train_val_inds]
 
             k_train_x = get_view_dict(k_x[np.ix_(train_inds,train_inds)])
             k_val_x = get_view_dict(k_x[np.ix_(val_inds,train_inds)])
@@ -71,8 +73,10 @@ for r in ratios_missing:
             for c in c_range:
                 model = train(k_train_x, train_y, c)
                 pred = predict(k_val_x, val_y, model)
+                print(accuracy_score(predict(k_train_x, train_y, model), train_y))
 
-                tuning_acc[c] = accuracy_score(pred, val_y)
+                tuning_acc[c] += accuracy_score(pred, val_y)
+                print(tuning_acc[c])
 
             best_C = max(tuning_acc, key=tuning_acc.get)
 
