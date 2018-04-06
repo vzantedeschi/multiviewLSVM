@@ -121,6 +121,11 @@ def multiview_kernels(x1, x2, kernel, gamma=None):
 
     return np.dstack(matrices)
 
+def rbf_kernel(distances):
+
+    gamma = np.mean(distances)
+    return np.exp(- distances**2 / gamma)
+
 # ----------------------------------------------------------------- SPLITTERS
 
 def splits_generator(x, CV=3, sets=None):
@@ -227,13 +232,11 @@ def csv_to_dict(filename):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog, dataset="flower17", strategy="lmvsvm", view_rec_type="zeros"):
+def get_args(prog, reconstr="zeros"):
 
     parser = argparse.ArgumentParser(prog=prog, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-s", "--strategy", dest='strategy', default=strategy,
-                        help='choice of learner')
-    parser.add_argument("-r", "--reconstr", dest='view_rec_type', default=view_rec_type,
+    parser.add_argument("-r", "--reconstr", dest='reconstr', default=reconstr,
                         help='choice of reconstruction technique for missing views')
 
     return parser.parse_args()

@@ -4,63 +4,84 @@ from statistics import mean, stdev
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics.pairwise import rbf_kernel
-from sklearn.model_selection import KFold
 
-from liblinearutil import *
-
-from src.baseline import *
-from src.utils import dict_to_csv, load_uwave, multiview_kernels
+from src.lmvsvm import *
+from src.utils import dict_to_csv, load_uwave, select_landmarks, splits_generator, twod_array
 
 DATASET = "uwave"
 kname = "rbf"
 
+landmarks = [10, 50, 100, 200, 400, 500, 597]
 c_range = [10**i for i in range(-3, 4)]
 
+# landmarks = [10]
+# c_range = [0.1]
+ITER = 5
 CV = 3
-PATH = "results/view/{}/svm-per-view".format(DATASET)
+PATH = "results/view/{}/lmvsvm".format(DATASET)
 
-print("learning on {} with SVM per view".format(DATASET))
+print("learning on {} with LMVSVM".format(DATASET))
 
 # datasets
 X, Y, test_X, test_Y = load_uwave()
 
-# tuning
-t1 = time.time()
+acc_list, acc_std_list = [], []
+train_time_list = []
+test_time_list = []
 
-tuning_acc = {}.fromkeys(c_range, 0.)    
+for L in landmarks:
 
-splitter = KFold(n_splits=CV)
+    accuracies = []
+    train_times = []
+    test_times = []
 
-for train_index, val_index in splitter.split(X):
+    for it in range(ITER):
 
-    train_x, val_x = X[train_index], X[val_index]
-    train_y, val_y = Y[train_index], Y[val_index]
+        # tuning
+        t1 = time.time()
 
-    train_matrix = multiview_kernels(train_x, train_x, rbf_kernel, 3)
-    val_matrix = multiview_kernels(val_x, train_x, rbf_kernel, 3)
+        tuning_acc = {}.fromkeys(c_range, 0.)    
 
-    # tuning     
-    for c in c_range:
-        models = train_svm_per_view(train_matrix, train_y, 8, 3, c)
-        pred = predict_svm_per_view(val_matrix, val_y, 3, models)
-        tuning_acc[c] += accuracy_score(val_y, pred)
+        for train_inds, val_inds, _ in splits_generator(X, CV, None):
 
-best_C = max(tuning_acc, key=tuning_acc.get)
+            train_x, train_y = X[train_inds], Y[train_inds]
+            val_x, val_y = X[val_inds], Y[val_inds]
 
-t2 = time.time()
-print("tuning time:", t2-t1)
+            lands = select_landmarks(train_x, L)
+            k_train_x = twod_array(get_kernels(train_x, lands, kernel=rbf_kernel))
+            k_val_x = twod_array(get_kernels(val_x, lands, kernel=rbf_kernel))
 
-# training
-train_matrix = multiview_kernels(X, X, rbf_kernel, 3)
-models = train_svm_per_view(train_matrix, Y, 8, 3, best_C)
+            for c in c_range:
 
-t3 = time.time()
-print("training time:", t3-t2)
+                model = train(k_train_x, train_y, c)
+                pred = predict(k_val_x, val_y, model)
+                tuning_acc[c] += accuracy_score(pred, val_y)
 
-test_matrix = multiview_kernels(test_X, X, rbf_kernel, 3)
-pred = predict_svm_per_view(test_matrix, test_Y, 3, models)
+        best_C = max(tuning_acc, key=tuning_acc.get)
 
-t4 = time.time()
-print("testing time:", t4-t3)
+        t2 = time.time()
+        print("tuning time:", t2-t1)
+        
+        # training
+        k_train_val_x = twod_array(get_kernels(X, lands, kernel=rbf_kernel))
+        model = train(k_train_val_x, Y, best_C)
 
-dict_to_csv({'accuracy': accuracy_score(test_Y, pred)*100, 'error': 0., 'train_time': t3-t2, 'test_time': t4-t3},["nb_iter={},cv={}".format(1, CV)], PATH+".csv")
+        t3 = time.time()
+        print("training time:", t3-t2)
+
+        k_test_x = twod_array(get_kernels(test_X, lands, kernel=rbf_kernel))
+        pred = predict(k_test_x, test_Y, model)
+
+        t4 = time.time()
+        print("testing time:", t4-t3)
+
+        accuracies.append(accuracy_score(pred, test_Y)*100)
+        train_times.append(t3-t2)
+        test_times.append(t4-t3)
+
+    acc_list.append(mean(accuracies))
+    acc_std_list.append(stdev(accuracies))
+    train_time_list.append(mean(train_times))
+    test_time_list.append(mean(test_times))
+
+dict_to_csv({'accuracy': acc_list, 'error': acc_std_list, 'train_time': train_time_list, 'test_time': test_time_list, 'landmarks': landmarks},["nb_iter={},cv={}".format(ITER, CV)], PATH+".csv")
