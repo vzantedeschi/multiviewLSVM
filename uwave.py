@@ -9,18 +9,15 @@ from src.lmvsvm import *
 from src.utils import dict_to_csv, load_uwave, select_landmarks, splits_generator, twod_array
 
 DATASET = "uwave"
-kname = "rbf"
 
 landmarks = [10, 50, 100, 200, 400, 500, 597]
 c_range = [10**i for i in range(-3, 4)]
 
-# landmarks = [10]
-# c_range = [0.1]
 ITER = 5
 CV = 3
-PATH = "results/view/{}/lmvsvm".format(DATASET)
+PATH = "results/{}/lmvsvm".format(DATASET)
 
-print("learning on {} with LMVSVM".format(DATASET))
+print("learning on {} with LMVSVM. results saved in {}".format(DATASET, PATH))
 
 # datasets
 X, Y, test_X, test_Y = load_uwave()

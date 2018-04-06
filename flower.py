@@ -5,7 +5,7 @@ from statistics import mean, stdev
 from sklearn.metrics import accuracy_score
 
 from src.lmvsvm import train, predict, get_kernels
-from src.utils import dict_to_csv, load_flower17, select_landmarks, select_from_multiple_views, rbf_kernel, twod_array
+from src.utils import dict_to_csv, load_flower17, select_landmarks, select_from_multiple_views, rbf_kernel, twod_array, splits_generator
 
 DATASET = "flower17"
 landmarks = [10, 50, 100, 200, 400, 500, 597]
@@ -34,11 +34,7 @@ for L in landmarks:
         train_times = []
         test_times = []
 
-        for p in range(3):
-
-            train_inds = sets[p][0]
-            test_inds = sets[p][1]
-            val_inds = sets[p][2]
+        for train_inds, val_inds, test_inds in splits_generator(dist_matrices, 3, sets):
 
             lands = select_landmarks(train_inds, L)
 
