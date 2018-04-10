@@ -4,10 +4,9 @@ from statistics import mean, stdev
 
 from sklearn.metrics import accuracy_score
 
-from src.kernels import rbf_kernel
 from src.missing_views import set_random_views_to_value, laplacian_reconstruction
 from src.svms import *
-from src.utils import dict_to_csv, load_flower17, get_args, get_view_dict, twod_array, splits_generator, multiview_kernels
+from src.utils import dict_to_csv, load_flower17, get_args, get_view_dict, twod_array, splits_generator, multiview_kernels, rbf_kernel
 
 CV = 3
 
@@ -21,7 +20,8 @@ c_range = [1]
 Y, sets, X = load_flower17(rbf_kernel)
 
 ITER = 2
-PATH = "results/view/flower17/missing/svms/laplacian"
+ITER = 10
+PATH = "results/view/flower17/missing/svms/none"
 
 print("learning on flower with SVMs, missing views completed by Laplacian completion")
 
@@ -43,8 +43,8 @@ for r in ratios_missing:
 
         t0 = time.time()
         # kernelize and reconstruct views
-        k_x, mask = laplacian_reconstruction(x)
-
+        # k_x, mask = laplacian_reconstruction(x)
+        k_x, mask = x, np.ones(len(x), dtype=bool)
         t10 = time.time()
 
         inds = np.arange(len(X))
