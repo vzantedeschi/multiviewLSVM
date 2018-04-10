@@ -42,7 +42,8 @@ for r in ratios_missing:
 
         # kernelize and reconstruct views
         t0 = time.time()
-        k_x, mask, mask2 = laplacian_reconstruction(x, rbf_kernel, test_x)
+        # k_x, mask, mask2 = laplacian_reconstruction(x, rbf_kernel, test_x)
+        k_x, mask, mask2 = x, np.ones(len(Y), dtype=bool), np.ones(len(test_Y), dtype=bool)
 
         y, test_y = Y[mask], test_Y[mask2]
 
