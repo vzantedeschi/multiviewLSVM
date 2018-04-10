@@ -4,18 +4,24 @@ from statistics import mean, stdev
 
 from sklearn.metrics import accuracy_score
 
-from src.lmvsvm import train_kernel, predict_kernel, get_kernels
+from src.lmvsvm import train_kernel, train, predict, predict_kernel, get_kernels
 from src.utils import dict_to_csv, load_flower17, select_landmarks, select_from_multiple_views, rbf_kernel, twod_array, splits_generator
 
 DATASET = "flower17"
 landmarks = [10, 50, 100, 200, 400, 500, 600, 680]
-# landmarks = [200]
 C_RANGE = [10**i for i in range(-3, 4)]
 
+problem = "kernel"
+# problem = "linear"
+
 ITER = 5
-PATH = "results/{}/kernel-lmvsvm".format(DATASET)
+PATH = "results/{}/{}-lmvsvm".format(DATASET, problem)
 
 print("learning on {} with L3SVM. results saved in {}".format(DATASET, PATH))
+
+if problem == "kernel":
+    train = train_kernel
+    predict = predict_kernel
 
 # datasets
 labels, sets, dist_matrices = load_flower17(rbf_kernel)

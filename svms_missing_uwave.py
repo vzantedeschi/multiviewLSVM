@@ -12,14 +12,14 @@ from src.utils import dict_to_csv, load_flower17, get_args, get_view_dict, twod_
 CV = 3
 
 ratios_missing = [0.05*i for i in range(1, 11)]
-c_range = [10**i for i in range(-3, 4)]
+#c_range = [10**i for i in range(-3, 4)]
 
-# ratios_missing = [0.05]
-# c_range = [1]
+#ratios_missing = [0.05]
+c_range = [1]
 
 X, Y, test_X, test_Y = load_uwave()
 
-ITER = 10
+ITER = 2
 PATH = "results/view/uwave/missing/svms/laplacian"
 
 print("learning on uwave with SVMs, missing views completed by Laplacian completion")
