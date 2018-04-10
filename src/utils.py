@@ -232,11 +232,10 @@ def csv_to_dict(filename):
 
 # ------------------------------------------------------------------- ARG PARSER
 
-def get_args(prog, reconstr="zeros"):
+def get_args(prog, reconstr="reconstruction"):
 
     parser = argparse.ArgumentParser(prog=prog, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-r", "--reconstr", dest='reconstr', default=reconstr,
-                        help='choice of reconstruction technique for missing views')
+    parser.add_argument("-r", "--reconstr", dest='reconstr', default=reconstr, choices=["none", "reconstruction"], help='choice of reconstruction technique for missing views')
 
     return parser.parse_args()

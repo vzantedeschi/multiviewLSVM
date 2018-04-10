@@ -11,11 +11,12 @@ from src.utils import dict_to_csv, load_uwave, select_landmarks, splits_generato
 DATASET = "uwave"
 
 landmarks = [10, 50, 100, 200, 400, 500, 597]
+# landmarks = [200]
 c_range = [10**i for i in range(-3, 4)]
 
 ITER = 5
 CV = 3
-PATH = "results/{}/lmvsvm".format(DATASET)
+PATH = "results/{}/kernel-lmvsvm".format(DATASET)
 
 print("learning on {} with LMVSVM. results saved in {}".format(DATASET, PATH))
 
@@ -73,6 +74,7 @@ for L in landmarks:
         print("testing time:", t4-t3)
 
         accuracies.append(accuracy_score(pred, test_Y)*100)
+        print(accuracy_score(pred, test_Y)*100)
         train_times.append(t3-t2)
         test_times.append(t4-t3)
 

@@ -4,15 +4,16 @@ from statistics import mean, stdev
 
 from sklearn.metrics import accuracy_score
 
-from src.lmvsvm import train, predict, get_kernels
+from src.lmvsvm import train_kernel, predict_kernel, get_kernels
 from src.utils import dict_to_csv, load_flower17, select_landmarks, select_from_multiple_views, rbf_kernel, twod_array, splits_generator
 
 DATASET = "flower17"
 landmarks = [10, 50, 100, 200, 400, 500, 600, 680]
+# landmarks = [200]
 C_RANGE = [10**i for i in range(-3, 4)]
 
 ITER = 5
-PATH = "results/{}/lmvsvm".format(DATASET)
+PATH = "results/{}/kernel-lmvsvm".format(DATASET)
 
 print("learning on {} with L3SVM. results saved in {}".format(DATASET, PATH))
 
@@ -73,6 +74,7 @@ for L in landmarks:
             print("testing time:", t4-t3)
 
             accuracies.append(accuracy_score(pred, test_y)*100)
+            print(accuracy_score(pred, test_y)*100)
             train_times.append(t3-t2)
             test_times.append(t4-t3)
 

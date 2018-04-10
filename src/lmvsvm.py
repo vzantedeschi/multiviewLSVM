@@ -3,6 +3,7 @@ import numpy as np
 import liblinearutil as liblin
 from scipy.linalg import lstsq
 from scipy.optimize import leastsq, minimize
+from sklearn.svm import SVC
 
 from src.utils import select_from_multiple_views, select_landmarks, multiview_kernels
 
@@ -43,10 +44,15 @@ def missing_lstsq(A, B):
     """
     mask = ~np.isnan(B) 
 
+    l = len(A)
     X = np.empty((B.shape[0], A.shape[0]))
     for i in range(B.shape[0]):
         m = mask[i]
-        X[i] = lstsq(A[:, m].T, B[i, m], check_finite=False)[0]
+        try:
+            X[i] = lstsq(A[:, m].T, B[i, m], check_finite=False)[0]
+        except:
+            # all views are None
+            X[i] = np.zeros(l)
     return X, mask
 
 def train(x, y, c, params='-s 2 -B 1 -q'):
@@ -60,6 +66,15 @@ def predict(x, y, model, classify=True):
         return p_label
 
     return p_vals
+
+def train_kernel(x, y, c, params='-s 2 -B 1 -q'):
+
+    model = SVC(C=c).fit(x, y)
+    return model
+
+def predict_kernel(x, y, model, classify=True):
+
+    return model.predict(x)
 
 # -------------------------------------------------------------- ALTERNATING LEARNING R, theta
 
