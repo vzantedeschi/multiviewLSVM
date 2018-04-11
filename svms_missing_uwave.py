@@ -14,13 +14,13 @@ CV = 3
 ratios_missing = [0.05*i for i in range(1, 11)]
 c_range = [10**i for i in range(-3, 4)]
 
-# ratios_missing = [0.05]
-# c_range = [1]
+#ratios_missing = [0.05]
+#c_range = [1]
 
 X, Y, test_X, test_Y = load_uwave()
 
-ITER = 10
-PATH = "results/view/uwave/missing/svms/laplacian"
+ITER = 2
+PATH = "results/view/uwave/missing/svms/none"
 
 print("learning on uwave with SVMs, missing views completed by Laplacian completion")
 
@@ -43,8 +43,9 @@ for r in ratios_missing:
         # kernelize and reconstruct views
         t0 = time.time()
         # k_x, mask, mask2 = laplacian_reconstruction(x, rbf_kernel, test_x)
-        k_x, mask, mask2 = x, np.ones(len(Y), dtype=bool), np.ones(len(test_Y), dtype=bool)
-
+        mask, mask2 = np.ones(len(Y), dtype=bool), np.ones(len(test_Y), dtype=bool)
+        
+        k_x = multiview_kernels(np.vstack((x, test_x)), np.vstack((x, test_x)), rbf_kernel)
         y, test_y = Y[mask], test_Y[mask2]
 
         t10 = time.time()

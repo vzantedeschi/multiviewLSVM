@@ -11,14 +11,15 @@ from src.utils import dict_to_csv, load_flower17, get_args, get_view_dict, twod_
 CV = 3
 
 ratios_missing = [0.05*i for i in range(1, 11)]
-c_range = [10**i for i in range(-3, 4)]
+# c_range = [10**i for i in range(-3, 4)]
 
 # ratios_missing = [0.05]
-# c_range = [1]
+c_range = [1]
 
 # datasets
 Y, sets, X = load_flower17(rbf_kernel)
 
+ITER = 2
 ITER = 10
 PATH = "results/view/flower17/missing/svms/none"
 

@@ -14,11 +14,18 @@ landmarks = [10, 50, 100, 200, 400, 500, 597]
 # landmarks = [200]
 c_range = [10**i for i in range(-3, 4)]
 
+problem = "kernel"
+# problem = "linear"
+
 ITER = 5
 CV = 3
-PATH = "results/{}/kernel-lmvsvm".format(DATASET)
+PATH = "results/{}/{}-lmvsvm".format(DATASET, problem)
 
 print("learning on {} with LMVSVM. results saved in {}".format(DATASET, PATH))
+
+if problem == "kernel":
+    train = train_kernel
+    predict = predict_kernel
 
 # datasets
 X, Y, test_X, test_Y = load_uwave()
