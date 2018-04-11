@@ -18,14 +18,20 @@ def one_vs_all_svm_train(train_x, train_y, c, params='-s 0 -t 4 -b 1 -q'):
 
     nb_classes = max(train_y) + 1
 
+    # drop points with nans
+    inds = ~np.isnan(x_copy)[:, 0]
+
+    x_copy = train_x.copy()[inds]
+    y_copy = train_y.copy()[inds]
+
     for cl in range(nb_classes):
 
-        y = train_y.copy()
-        y[train_y == cl] = 1
-        y[train_y != cl] = -1
+        y = y_copy.copy()
+        y[y_copy == cl] = 1
+        y[y_copy != cl] = -1
 
         # add serial number
-        x = np.c_[np.arange(len(y))+1, train_x]
+        x = np.c_[np.arange(len(y))+1, x_copy]
 
         model = svm_train(y.tolist(), x.tolist(), '-c {} '.format(c) + params)
         models.append(model)
