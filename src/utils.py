@@ -84,9 +84,12 @@ def array_to_dict(a,**kwargs):
     return results
 
 # ----------------------------------------------------------------------
-def select_landmarks(x, n):
+def select_landmarks(x, n, inds=False):
     m = len(x)
 
+    if inds:
+        return random.sample(range(m), min(m, n))
+        
     return x[random.sample(range(m), min(m, n))]
 
 def select_from_multiple_views(x, inds):
